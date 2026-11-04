@@ -20,7 +20,7 @@ const dayNum = (d: string) => Number(d.slice(8))
 const wd = (d: string) => WD[new Date(`${d}T12:00:00+03:00`).getUTCDay()]
 
 // Запись в один экран: мастер → услуга → день → время → контакты. Каждый следующий шаг появляется после выбора предыдущего.
-export function BookingFlow({ staff, services, days }: { staff: Master[]; services: Svc[]; days: string[] }) {
+export function BookingFlow({ staff, services, days, tgKey }: { staff: Master[]; services: Svc[]; days: string[]; tgKey?: string }) {
     const router = useRouter()
     const [master, setMaster] = useState<Master | null>(staff.length === 1 ? staff[0] : null)
     const [service, setService] = useState<Svc | null>(null)
@@ -49,7 +49,7 @@ export function BookingFlow({ staff, services, days }: { staff: Master[]; servic
         if (!service || !day || !time) return
         setBusy(true); setError(null)
         const phone = String(new FormData(e.currentTarget).get('phone') ?? '')
-        const r = await book({ serviceId: service.id, day, time, name, phone, comment, consent, website }).catch(() => ({ error: 'net' }))
+        const r = await book({ serviceId: service.id, day, time, name, phone, comment, consent, website, k: tgKey }).catch(() => ({ error: 'net' }))
         if ('token' in r && r.token) { router.push(`/a/${r.token}`); return }
         const code = 'error' in r ? String(r.error) : ''
         setError(ERR[code] ?? 'Не получилось записать. Попробуйте ещё раз.')

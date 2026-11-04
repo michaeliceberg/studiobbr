@@ -1,12 +1,13 @@
 import { addClosedDay, removeClosedDay, saveHours, saveService } from '@/app/schedule-actions'
 import { getClosedDays, getServices, getStaff, getWorkHours, minToTime } from '@/lib/booking'
 import { dateRu } from '@/lib/format'
+import { botLink, getMasters, masterLink, tgEnabled } from '@/lib/tg'
 
 export const dynamic = 'force-dynamic'
 const WEEK = [[1, 'Пн'], [2, 'Вт'], [3, 'Ср'], [4, 'Чт'], [5, 'Пт'], [6, 'Сб'], [0, 'Вс']] as const
 
 export default async function ScheduleSettings() {
-    const [services, hours, closed, staff] = await Promise.all([getServices(true), getWorkHours(), getClosedDays(), getStaff()])
+    const [services, hours, closed, staff, tgMasters] = await Promise.all([getServices(true), getWorkHours(), getClosedDays(), getStaff(), tgEnabled() ? getMasters() : Promise.resolve([])])
     const serviceFields = (s?: (typeof services)[number]) => (
         <>
             <div><label className="label">Название</label><input name="name" defaultValue={s?.name} placeholder="Мужская стрижка" className="input" required /></div>
@@ -65,6 +66,17 @@ export default async function ScheduleSettings() {
                     <div className="min-w-0 flex-1"><label className="label" htmlFor="closed">Закрыть день</label><input id="closed" type="date" name="day" className="input" required /></div>
                     <button className="btn-ghost shrink-0 text-sm">Добавить</button>
                 </form>
+            </section>
+            <section className="flex flex-col gap-2">
+                <h2 className="font-bold text-brass">Telegram-бот</h2>
+                {!tgEnabled() ? <p className="card p-4 text-sm text-muted">Бот не подключён: нет ключа на сервере.</p> : (
+                    <div className="card flex flex-col gap-3 p-4 text-sm">
+                        <p>Новые записи и отмены приходят в Telegram. Откройте ссылку на телефоне мастера и нажмите «Старт».</p>
+                        <a href={masterLink()} target="_blank" rel="noreferrer" className="btn-primary w-full">Получать записи в Telegram</a>
+                        {tgMasters.length > 0 && <p className="text-muted">Подключены: {tgMasters.map((m) => m.name).join(', ')}</p>}
+                        <p className="text-muted">Ссылка на бота для клиентов: <a href={botLink()} className="font-semibold text-mint underline">{botLink().replace('https://', '')}</a></p>
+                    </div>
+                )}
             </section>
         </>
     )

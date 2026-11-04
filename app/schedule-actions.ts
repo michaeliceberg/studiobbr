@@ -5,13 +5,15 @@ import { revalidatePath } from 'next/cache'
 import { sql } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 import { createAppointment, timeToMin } from '@/lib/booking'
+import { announceBooking, announceCancel } from '@/lib/tg'
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim()
 const int = (f: FormData, k: string, min: number, max: number, dflt: number) => { const n = parseInt(s(f, k), 10); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : dflt }
 
 export async function cancelAppointment(id: number) {
     requireAuth()
-    await sql`UPDATE appointments SET status = 'cancelled' WHERE id = ${id}`
+    const [a] = await sql<{ token: string }[]>`UPDATE appointments SET status = 'cancelled' WHERE id = ${id} AND status = 'booked' RETURNING token`
+    if (a) await announceCancel(a.token, false)
     revalidatePath('/schedule')
 }
 
@@ -22,6 +24,7 @@ export async function addAppointment(f: FormData) {
     if (!name) throw new Error('Нужно имя')
     const r = await createAppointment({ serviceId: Number(s(f, 'service_id')), day: s(f, 'day'), time: s(f, 'time'), name, phone: s(f, 'phone'), comment: s(f, 'comment'), source: 'master', consent: false })
     if ('error' in r) redirect(`/schedule/new?error=${r.error}`)
+    await announceBooking(r.token)
     revalidatePath('/schedule')
     redirect('/schedule')
 }

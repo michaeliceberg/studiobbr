@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Запись — BBR Studio', description: 'Онлайн-запись в барбершоп BBR Studio, Королёв, Октябрьский бульвар, 26.' }
 
 // Пока запись идёт через Dikidi, клиенты эту страницу не видят: мастер может проверить после входа.
-export default async function BookPage() {
+export default async function BookPage({ searchParams }: { searchParams: { k?: string } }) {
     const preview = isAuthed()
     const open = BOOKING_OPEN || preview
     const [staff, services, hours, closed] = await Promise.all([open ? getStaff() : [], open ? getServices() : [], open ? getWorkHours() : [], open ? getClosedDays() : ([] as string[])])
@@ -32,7 +32,7 @@ export default async function BookPage() {
                         Главный лесничий колет дрова. Онлайн-запись скоро откроется.
                     </div>
                 : services.length === 0 ? <div className="card p-6 text-center text-muted">Услуги ещё не добавлены.</div>
-                : <BookingFlow staff={staff.filter((m) => services.some((s) => s.staff_id === m.id))} services={services.map(({ id, staff_id, category, name, duration_min, price }) => ({ id, staff_id, category, name, duration_min, price }))} days={days} />}
+                : <BookingFlow staff={staff.filter((m) => services.some((s) => s.staff_id === m.id))} services={services.map(({ id, staff_id, category, name, duration_min, price }) => ({ id, staff_id, category, name, duration_min, price }))} days={days} tgKey={searchParams.k} />}
             <BehaNote />
         </main>
     )

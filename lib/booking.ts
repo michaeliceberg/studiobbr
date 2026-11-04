@@ -76,7 +76,7 @@ export const activeBookingsByPhone = async (phone: string) =>
     (await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM appointments WHERE phone = ${formatPhone(phone)} AND status = 'booked' AND starts_at > now()`)[0].n
 
 // Единственное место, где создаётся запись. Занятое время отсекает сама база: см. EXCLUDE в схеме.
-export async function createAppointment(a: { serviceId: number; day: string; time: string; name: string; phone: string; comment: string; source: 'online' | 'master'; consent: boolean }) {
+export async function createAppointment(a: { serviceId: number; day: string; time: string; name: string; phone: string; comment: string; source: 'online' | 'master'; consent: boolean; tgChatId?: string | null }) {
     const [s] = await sql<Service[]>`SELECT * FROM services WHERE id = ${a.serviceId}`
     if (!s) return { error: 'bad' as const }
     const phone = formatPhone(a.phone)
@@ -85,8 +85,8 @@ export async function createAppointment(a: { serviceId: number; day: string; tim
     const client_id = await findOrCreateClient(a.name, phone)
     try {
         const [row] = await sql<{ token: string }[]>`
-            INSERT INTO appointments (client_id, staff_id, service_id, service_name, name, phone, comment, starts_at, ends_at, source, consent_at)
-            VALUES (${client_id}, ${s.staff_id}, ${s.id}, ${s.name}, ${a.name}, ${phone}, ${a.comment}, ${start}, ${end}, ${a.source}, ${a.consent ? new Date() : null})
+            INSERT INTO appointments (client_id, staff_id, service_id, service_name, name, phone, comment, starts_at, ends_at, source, consent_at, tg_chat_id)
+            VALUES (${client_id}, ${s.staff_id}, ${s.id}, ${s.name}, ${a.name}, ${phone}, ${a.comment}, ${start}, ${end}, ${a.source}, ${a.consent ? new Date() : null}, ${a.tgChatId ?? null})
             RETURNING token`
         return { token: row.token }
     } catch (e) {

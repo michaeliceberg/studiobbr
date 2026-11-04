@@ -108,3 +108,11 @@ DO $$ BEGIN
             EXCLUDE USING gist (int4range(staff_id, staff_id, '[]') WITH &&, tstzrange(starts_at, ends_at) WITH &&) WHERE (status = 'booked');
     END IF;
 END $$;
+
+-- Telegram-бот @studiobbr_bot: мастера получают заявки и отмены; клиент, записавшийся из бота, получает подтверждение.
+CREATE TABLE IF NOT EXISTS tg_masters (
+    chat_id    bigint PRIMARY KEY,
+    name       text NOT NULL DEFAULT '',
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS tg_chat_id bigint;

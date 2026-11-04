@@ -6,6 +6,7 @@ import { sql } from '@/lib/db'
 import { isAuthed } from '@/lib/auth'
 import { BOOKING_OPEN } from '@/lib/legal'
 import { activeBookingsByPhone, createAppointment, getSlots } from '@/lib/booking'
+import { announceBooking, announceCancel, chatFromBookingKey } from '@/lib/tg'
 
 const MAX_ACTIVE_PER_PHONE = 2
 const hits = new Map<string, number[]>()
@@ -24,7 +25,7 @@ export async function loadSlots(serviceId: number, day: string) {
     return getSlots(serviceId, day)
 }
 
-export async function book(input: { serviceId: number; day: string; time: string; name: string; phone: string; comment: string; consent: boolean; website: string }) {
+export async function book(input: { serviceId: number; day: string; time: string; name: string; phone: string; comment: string; consent: boolean; website: string; k?: string }) {
     if (!BOOKING_OPEN && !isAuthed()) return { error: 'closed' }
     if (input.website) return { error: 'bad' } // скрытое поле: его заполняют только боты
     const name = input.name.trim().slice(0, 80)
@@ -34,13 +35,15 @@ export async function book(input: { serviceId: number; day: string; time: string
     if (tooMany()) return { error: 'limit' }
     if ((await activeBookingsByPhone(input.phone)) >= MAX_ACTIVE_PER_PHONE) return { error: 'phone-limit' }
     if (!(await getSlots(input.serviceId, input.day)).includes(input.time)) return { error: 'taken' }
-    const r = await createAppointment({ serviceId: input.serviceId, day: input.day, time: input.time, name, phone: input.phone, comment: input.comment.trim().slice(0, 500), source: 'online', consent: true })
+    const r = await createAppointment({ serviceId: input.serviceId, day: input.day, time: input.time, name, phone: input.phone, comment: input.comment.trim().slice(0, 500), source: 'online', consent: true, tgChatId: chatFromBookingKey(input.k) })
+    if ('token' in r && r.token) await announceBooking(r.token)
     revalidatePath('/schedule')
     return r
 }
 
 export async function cancelByToken(token: string) {
-    await sql`UPDATE appointments SET status = 'cancelled' WHERE token = ${token} AND status = 'booked' AND starts_at > now()`
+    const done = await sql`UPDATE appointments SET status = 'cancelled' WHERE token = ${token} AND status = 'booked' AND starts_at > now() RETURNING id`
+    if (done.length) await announceCancel(token, true)
     revalidatePath(`/a/${token}`)
     revalidatePath('/schedule')
 }
