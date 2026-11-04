@@ -87,3 +87,24 @@ CREATE INDEX IF NOT EXISTS appointments_phone_idx ON appointments (phone);
 
 -- Счётчик картинок примерки: только время, чтобы держать дневной лимит расходов. Сами фото не храним.
 CREATE TABLE IF NOT EXISTS ai_images (id serial PRIMARY KEY, created_at timestamptz NOT NULL DEFAULT now());
+
+-- Два мастера: у каждого свои услуги и своя занятость. Часы работы и выходные пока общие на студию.
+CREATE TABLE IF NOT EXISTS staff (
+    id     int PRIMARY KEY,
+    name   text NOT NULL,
+    title  text NOT NULL DEFAULT '',
+    sort   int NOT NULL DEFAULT 0,
+    active boolean NOT NULL DEFAULT true
+);
+INSERT INTO staff (id, name, title, sort) VALUES (1, 'Бэха', 'Главный лесничий', 1), (2, 'Влад', 'Барбер', 2) ON CONFLICT DO NOTHING;
+ALTER TABLE services ADD COLUMN IF NOT EXISTS staff_id int NOT NULL DEFAULT 1 REFERENCES staff(id);
+ALTER TABLE services ADD COLUMN IF NOT EXISTS category text NOT NULL DEFAULT '';
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS staff_id int NOT NULL DEFAULT 1 REFERENCES staff(id);
+-- Пересечения запрещены только у одного мастера. int4range вместо равенства: не нужно расширение btree_gist.
+ALTER TABLE appointments DROP CONSTRAINT IF EXISTS appointments_tstzrange_excl;
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'appointments_staff_time_excl') THEN
+        ALTER TABLE appointments ADD CONSTRAINT appointments_staff_time_excl
+            EXCLUDE USING gist (int4range(staff_id, staff_id, '[]') WITH &&, tstzrange(starts_at, ends_at) WITH &&) WHERE (status = 'booked');
+    END IF;
+END $$;

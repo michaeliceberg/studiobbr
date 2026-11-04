@@ -32,7 +32,7 @@ export default async function SchedulePage() {
                                 <div className="min-w-0">
                                     <p className="text-lg font-black">{a.time}–{a.end_time}</p>
                                     {a.client_id ? <Link href={`/clients/${a.client_id}`} className="block truncate font-bold">{a.name}</Link> : <p className="truncate font-bold">{a.name}</p>}
-                                    <p className="text-sm text-muted">{a.service_name}{a.source === 'online' && ' · онлайн'}</p>
+                                    <p className="text-sm text-muted">{a.staff_name} · {a.service_name}{a.source === 'online' && ' · онлайн'}</p>
                                     {a.comment && <p className="mt-1 text-sm">{a.comment}</p>}
                                 </div>
                                 {a.phone && <a href={telHref(a.phone)} className="btn-ghost !min-h-[44px] shrink-0 !px-3 text-sm">Позвонить</a>}

@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import { book, loadSlots } from '@/app/book/actions'
 import { PhoneInput } from './phone-input'
 
-type Svc = { id: number; name: string; duration_min: number; price: number }
+type Svc = { id: number; staff_id: number; category: string; name: string; duration_min: number; price: number }
+type Master = { id: number; name: string; title: string }
 const ERR: Record<string, string> = {
     contacts: 'Проверьте имя и номер телефона.',
     consent: 'Нужно согласие на обработку данных.',
@@ -18,10 +19,11 @@ const WD = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
 const dayNum = (d: string) => Number(d.slice(8))
 const wd = (d: string) => WD[new Date(`${d}T12:00:00+03:00`).getUTCDay()]
 
-// Запись в один экран: услуга → день → время → контакты. Каждый следующий шаг появляется после выбора предыдущего.
-export function BookingFlow({ services, days }: { services: Svc[]; days: string[] }) {
+// Запись в один экран: мастер → услуга → день → время → контакты. Каждый следующий шаг появляется после выбора предыдущего.
+export function BookingFlow({ staff, services, days }: { staff: Master[]; services: Svc[]; days: string[] }) {
     const router = useRouter()
-    const [service, setService] = useState<Svc | null>(services.length === 1 ? services[0] : null)
+    const [master, setMaster] = useState<Master | null>(staff.length === 1 ? staff[0] : null)
+    const [service, setService] = useState<Svc | null>(null)
     const [day, setDay] = useState<string | null>(null)
     const [slots, setSlots] = useState<string[] | null>(null)
     const [time, setTime] = useState<string | null>(null)
@@ -31,6 +33,8 @@ export function BookingFlow({ services, days }: { services: Svc[]; days: string[
     const [website, setWebsite] = useState('')
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    const mine = services.filter((s) => s.staff_id === master?.id)
 
     useEffect(() => {
         setTime(null); setSlots(null)
@@ -56,15 +60,34 @@ export function BookingFlow({ services, days }: { services: Svc[]; days: string[
     return (
         <div className="flex flex-col gap-5">
             <section className="flex flex-col gap-2">
-                <h2 className="font-bold">Услуга</h2>
-                {services.map((s) => (
-                    <button key={s.id} type="button" aria-pressed={service?.id === s.id} onClick={() => setService(s)}
-                        className={`card flex items-center justify-between gap-3 p-4 text-left ${service?.id === s.id ? 'border-mint bg-mint/10' : ''}`}>
-                        <span className="min-w-0"><span className="block font-bold">{s.name}</span><span className="block text-sm text-muted">{s.duration_min} мин</span></span>
-                        <span className="shrink-0 font-bold text-brass">{s.price > 0 ? `${s.price} ₽` : ''}</span>
-                    </button>
-                ))}
+                <h2 className="font-bold">Мастер</h2>
+                <div className="grid grid-cols-2 gap-2">
+                    {staff.map((m) => (
+                        <button key={m.id} type="button" aria-pressed={master?.id === m.id} onClick={() => { setMaster(m); setService(null); setDay(null) }}
+                            className={`card p-4 text-left ${master?.id === m.id ? 'border-mint bg-mint/10' : ''}`}>
+                            <span className="block text-lg font-black">{m.name}</span><span className="block text-sm text-muted">{m.title}</span>
+                        </button>
+                    ))}
+                </div>
             </section>
+
+            {master && (
+                <section className="flex flex-col gap-2">
+                    <h2 className="font-bold">Услуга</h2>
+                    {Array.from(new Set(mine.map((s) => s.category))).map((cat) => (
+                        <div key={cat} className="flex flex-col gap-2">
+                            {cat && <h3 className="mt-1 text-sm font-semibold text-muted">{cat}</h3>}
+                            {mine.filter((s) => s.category === cat).map((s) => (
+                                <button key={s.id} type="button" aria-pressed={service?.id === s.id} onClick={() => setService(s)}
+                                    className={`card flex items-center justify-between gap-3 p-4 text-left ${service?.id === s.id ? 'border-mint bg-mint/10' : ''}`}>
+                                    <span className="min-w-0"><span className="block font-bold">{s.name}</span><span className="block text-sm text-muted">{s.duration_min} мин</span></span>
+                                    <span className="shrink-0 font-bold text-brass">{s.price > 0 ? `${s.price} ₽` : ''}</span>
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </section>
+            )}
 
             {service && (
                 <section className="flex flex-col gap-2">

@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { sql } from '@/lib/db'
 import { isAuthed } from '@/lib/auth'
-import { LEGAL_READY } from '@/lib/legal'
+import { BOOKING_OPEN } from '@/lib/legal'
 import { activeBookingsByPhone, createAppointment, getSlots } from '@/lib/booking'
 
 const MAX_ACTIVE_PER_PHONE = 2
@@ -25,7 +25,7 @@ export async function loadSlots(serviceId: number, day: string) {
 }
 
 export async function book(input: { serviceId: number; day: string; time: string; name: string; phone: string; comment: string; consent: boolean; website: string }) {
-    if (!LEGAL_READY && !isAuthed()) return { error: 'closed' }
+    if (!BOOKING_OPEN && !isAuthed()) return { error: 'closed' }
     if (input.website) return { error: 'bad' } // скрытое поле: его заполняют только боты
     const name = input.name.trim().slice(0, 80)
     const digits = input.phone.replace(/\D/g, '')

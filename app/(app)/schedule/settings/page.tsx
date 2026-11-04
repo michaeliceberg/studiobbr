@@ -1,15 +1,19 @@
 import { addClosedDay, removeClosedDay, saveHours, saveService } from '@/app/schedule-actions'
-import { getClosedDays, getServices, getWorkHours, minToTime } from '@/lib/booking'
+import { getClosedDays, getServices, getStaff, getWorkHours, minToTime } from '@/lib/booking'
 import { dateRu } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 const WEEK = [[1, 'Пн'], [2, 'Вт'], [3, 'Ср'], [4, 'Чт'], [5, 'Пт'], [6, 'Сб'], [0, 'Вс']] as const
 
 export default async function ScheduleSettings() {
-    const [services, hours, closed] = await Promise.all([getServices(true), getWorkHours(), getClosedDays()])
+    const [services, hours, closed, staff] = await Promise.all([getServices(true), getWorkHours(), getClosedDays(), getStaff()])
     const serviceFields = (s?: (typeof services)[number]) => (
         <>
             <div><label className="label">Название</label><input name="name" defaultValue={s?.name} placeholder="Мужская стрижка" className="input" required /></div>
+            <div className="grid grid-cols-2 gap-3">
+                <div><label className="label">Мастер</label><select name="staff_id" defaultValue={s?.staff_id ?? staff[0]?.id} className="input">{staff.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></div>
+                <div><label className="label">Раздел</label><input name="category" defaultValue={s?.category} className="input" /></div>
+            </div>
             <div className="grid grid-cols-2 gap-3">
                 <div><label className="label">Минут</label><input name="duration_min" inputMode="numeric" defaultValue={s?.duration_min ?? 60} className="input" /></div>
                 <div><label className="label">Цена, ₽</label><input name="price" inputMode="numeric" defaultValue={s?.price ?? ''} className="input" /></div>

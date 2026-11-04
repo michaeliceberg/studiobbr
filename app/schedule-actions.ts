@@ -30,7 +30,7 @@ export async function saveService(id: number | null, f: FormData) {
     requireAuth()
     const name = s(f, 'name')
     if (!name) return
-    const row = { name, duration_min: int(f, 'duration_min', 15, 480, 60), price: int(f, 'price', 0, 1000000, 0), active: f.get('active') === 'on' }
+    const row = { name, staff_id: int(f, 'staff_id', 1, 1000, 1), category: s(f, 'category'), duration_min: int(f, 'duration_min', 15, 480, 60), price: int(f, 'price', 0, 1000000, 0), active: f.get('active') === 'on' }
     if (id) await sql`UPDATE services SET ${sql(row)} WHERE id = ${id}`
     else await sql`INSERT INTO services ${sql(row)}`
     revalidatePath('/schedule/settings')
