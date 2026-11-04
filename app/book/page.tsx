@@ -4,6 +4,7 @@ import { BookingFlow } from '@/components/booking-flow'
 import { isAuthed } from '@/lib/auth'
 import { addDays, getClosedDays, getServices, getStaff, getWorkHours, HORIZON_DAYS, mskToday } from '@/lib/booking'
 import { BOOKING_OPEN, OPERATOR } from '@/lib/legal'
+import { MagicLink } from '@/components/magic-button'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Запись — BBR Studio', description: 'Онлайн-запись в барбершоп BBR Studio, Королёв, Октябрьский бульвар, 26.' }
@@ -25,6 +26,7 @@ export default async function BookPage({ searchParams }: { searchParams: { k?: s
                     <p className="text-sm text-muted">{OPERATOR.address}</p>
                 </div>
             </header>
+            <MagicLink href="/try" title="Примерь стрижку" subtitle="Селфи — и нейросеть покажет 4 стрижки на вас" />
             {!BOOKING_OPEN && preview && <p className="card border-brass/50 bg-brass/10 p-3 text-sm text-brass">Клиенты эту страницу пока не видят: запись идёт через Dikidi.</p>}
             {!open ? <div className="card flex flex-col items-center gap-3 p-6 text-center text-muted">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

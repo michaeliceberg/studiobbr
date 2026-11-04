@@ -14,7 +14,7 @@ const THICK: Record<string, string> = { 'Тонкие': 'fine', 'Средние'
 const lengthWord = (mm: number) => mm <= 3 ? 'clipped very close to the skin' : mm <= 12 ? 'buzzed very short' : mm <= 40 ? 'short' : mm <= 80 ? 'medium length' : 'long'
 
 // В запросе — проверенные мастером волосы: иначе нейросеть нарисует густую шевелюру там, где её не будет.
-const hairWords = (hair: Hair) => `${DENSITY[hair.hair_density] ?? ''} ${THICK[hair.hair_thick] ?? ''} ${TEXTURE[hair.hair_texture] ?? ''}`.replace(/\s+/g, ' ').trim()
+const hairWords = (hair?: Hair) => (hair ? `${DENSITY[hair.hair_density] ?? ''} ${THICK[hair.hair_thick] ?? ''} ${TEXTURE[hair.hair_texture] ?? ''}`.replace(/\s+/g, ' ').trim() : '') || 'his own natural'
 const cutWords = (cut: Pick<Cut, 'term' | 'lengths'>) =>
     `${cut.term} (top ${lengthWord(cut.lengths.top)}, sides ${lengthWord(cut.lengths.sides)}, back ${lengthWord(cut.lengths.nape)})`
 const SAME = 'Every tile shows THE SAME man from the reference photo: identical face, eyes, nose, skin, age, the same facial hair and exactly the same hair color. ' +
@@ -24,13 +24,13 @@ export const TILE_ORDER = ['вверху слева', 'вверху справа
 export const ANGLES = ['Спереди', 'Сбоку', 'Вполоборота', 'Затылок']
 
 // Сетка 2×2: четыре разные стрижки спереди, по порядку слева направо, сверху вниз.
-export const cutsGridPrompt = (cuts: Pick<Cut, 'term' | 'lengths'>[], hair: Hair) =>
+export const cutsGridPrompt = (cuts: Pick<Cut, 'term' | 'lengths'>[], hair?: Hair) =>
     `Create one image: a clean 2x2 grid of 4 square photo tiles with thin white gaps. ${SAME} (${hairWords(hair)} hair). ` +
     `Front view in every tile. Only the haircut differs, one per tile, left to right, top to bottom: ` +
     cuts.map((c, i) => `${i + 1}) ${cutWords(c)}`).join('; ') + '. Make the four haircuts clearly different from each other. Keep the same hairline. No text, no captions, no numbers.'
 
 // Сетка 2×2: одна стрижка с четырёх сторон.
-export const anglesGridPrompt = (cut: Pick<Cut, 'term' | 'lengths'>, hair: Hair) =>
+export const anglesGridPrompt = (cut: Pick<Cut, 'term' | 'lengths'>, hair?: Hair) =>
     `Create one image: a clean 2x2 grid of 4 square photo tiles with thin white gaps. ${SAME} (${hairWords(hair)} hair), ` +
     `with the same haircut in every tile: ${cutWords(cut)}. Tiles: 1) front view, 2) left side profile, 3) right three-quarter view, 4) back of the head. ` +
     'Keep the same hairline. No text, no captions, no numbers.'
@@ -47,4 +47,34 @@ export async function generateHairGrid(imageUrl: string, prompt: string) {
     const url = j.images?.[0]?.url
     if (!url) throw new Error('fal: no image')
     return url
+}
+
+// Публичная примерка /try: волосы мастер не проверял, поэтому вместо подбора ИИ — готовые наборы по настроению клиента.
+type PublicCut = { name: string; term: string; lengths: Cut['lengths'] }
+const L = (top: number, sides: number, nape = sides) => ({ top, crown: top, sides, nape })
+export const TRY_SETS: Record<string, { title: string; emoji: string; cuts: PublicCut[] }> = {
+    short: { title: 'Коротко и чётко', emoji: '⚡', cuts: [
+        { name: 'Текстурный кроп', term: 'textured crop with a low skin fade', lengths: L(30, 2) },
+        { name: 'Кроп Цезарь', term: 'Caesar cut with a mid fade', lengths: L(20, 3) },
+        { name: 'Бокс', term: 'classic short boxing haircut', lengths: L(15, 3) },
+        { name: 'Базз-кат', term: 'buzz cut with a sharp line-up', lengths: L(6, 3) },
+    ] },
+    classic: { title: 'Классика', emoji: '🎩', cuts: [
+        { name: 'Боковой пробор', term: 'classic side part with a taper', lengths: L(60, 9) },
+        { name: 'Айви Лиг', term: 'Ivy League cut', lengths: L(45, 9) },
+        { name: 'Помпадур', term: 'short pompadour with tapered sides', lengths: L(80, 6) },
+        { name: 'Зачёс назад', term: 'slicked back hair with a low taper', lengths: L(80, 9) },
+    ] },
+    bold: { title: 'Смело и модно', emoji: '🔥', cuts: [
+        { name: 'Квифф', term: 'quiff with a high skin fade', lengths: L(70, 2) },
+        { name: 'Французский кроп', term: 'French crop with a textured fringe and drop fade', lengths: L(35, 2) },
+        { name: 'Андеркат', term: 'disconnected undercut', lengths: L(90, 3) },
+        { name: 'Месси-топ', term: 'messy textured top with a taper fade', lengths: L(55, 6) },
+    ] },
+    long: { title: 'Подлиннее', emoji: '🌊', cuts: [
+        { name: 'Флоу', term: 'medium length flow hairstyle', lengths: L(110, 60) },
+        { name: 'Шторки', term: 'curtain hairstyle with a middle part', lengths: L(100, 40) },
+        { name: 'Кудрявый верх', term: 'curly textured top with a low taper', lengths: L(70, 9) },
+        { name: 'Удлинённый пробор', term: 'long side part hairstyle', lengths: L(110, 30) },
+    ] },
 }

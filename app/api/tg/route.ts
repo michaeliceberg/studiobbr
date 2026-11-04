@@ -4,8 +4,10 @@ import { OPERATOR } from '@/lib/legal'
 // Обновления Telegram приносит опросчик (scripts/tg-poller.mjs) с секретным заголовком.
 type Msg = { chat: { id: number; type: string }; from?: { first_name?: string; last_name?: string; username?: string }; text?: string }
 
-const B = { book: '📅 Записаться', mine: '🗓 Мои записи', where: '📍 Как нас найти' }
-const menu = { keyboard: [[{ text: B.book }, { text: B.mine }], [{ text: B.where }]], resize_keyboard: true, is_persistent: true }
+const B = { book: '📅 Записаться', mine: '🗓 Мои записи', where: '📍 Как нас найти', try: '✨ Примерить стрижку' }
+const menu = { keyboard: [[{ text: B.try }], [{ text: B.book }, { text: B.mine }], [{ text: B.where }]], resize_keyboard: true, is_persistent: true }
+const TRY_URL = `${process.env.PUBLIC_URL || 'https://studiobbr.ru'}/try`
+const sendTry = (chatId: string) => tgSend(chatId, 'Сделайте селфи — нейросеть покажет 4 стрижки прямо на вас ✨', { reply_markup: { inline_keyboard: [[{ text: '✨ Примерить стрижку', url: TRY_URL }]] } })
 const who = (m: Msg) => [m.from?.first_name, m.from?.last_name].filter(Boolean).join(' ') || (m.from?.username ? '@' + m.from.username : 'Без имени')
 
 const sendBooking = (chatId: string) => tgSend(chatId, 'Выберите услугу, день и время — запись сразу подтвердится 🪓',
@@ -45,10 +47,11 @@ async function handle(m: Msg) {
     }
 
     if (text === '/start' || text.startsWith('/start ')) {
-        await tgSend(chatId, `Привет! Это BBR Studio, барбершоп Бэхи 🪓\n${OPERATOR.address}\n\nЗдесь можно записаться на стрижку и посмотреть свои записи.`, { reply_markup: menu })
-        await sendBooking(chatId)
+        await tgSend(chatId, `Привет! Это BBR Studio, барбершоп Бэхи 🪓\n${OPERATOR.address}\n\nПримерьте стрижку по селфи, запишитесь и смотрите свои записи.`, { reply_markup: menu })
+        await sendTry(chatId)
         return
     }
+    if (text === B.try || text === '/try') { await sendTry(chatId); return }
     if (text === B.book || text === '/zapis' || /^(записаться|запись)$/i.test(text)) { await sendBooking(chatId); return }
     if (text === B.mine || text === '/mine') {
         const list = await chatAppointments(chatId)

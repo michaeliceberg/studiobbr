@@ -22,8 +22,8 @@ const readOffset = () => { try { return JSON.parse(fs.readFileSync(OFFSET_FILE, 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 await api('deleteWebhook', {}).catch((e) => console.error(e.message))
-await api('setMyCommands', { commands: [{ command: 'zapis', description: 'Записаться на стрижку' }, { command: 'mine', description: 'Мои записи' }, { command: 'start', description: 'Меню' }] }).catch((e) => console.error(e.message))
-await api('setMyDescription', { description: 'BBR Studio — барбершоп в Королёве 🪓\nОктябрьский бульвар, 26, 2-й этаж\n\n📅 Запись на удобное время\n🗓 Ваши записи и отмена\n\nНажмите «Старт».' }).catch((e) => console.error(e.message))
+await api('setMyCommands', { commands: [{ command: 'try', description: 'Примерить стрижку по селфи' }, { command: 'zapis', description: 'Записаться на стрижку' }, { command: 'mine', description: 'Мои записи' }, { command: 'start', description: 'Меню' }] }).catch((e) => console.error(e.message))
+await api('setMyDescription', { description: 'BBR Studio — барбершоп в Королёве 🪓\nОктябрьский бульвар, 26, 2-й этаж\n\n✨ Примерка стрижек по селфи\n📅 Запись на удобное время\n🗓 Ваши записи и отмена\n\nНажмите «Старт».' }).catch((e) => console.error(e.message))
 await api('setMyShortDescription', { short_description: 'BBR Studio 🪓 Запись на стрижку онлайн · Королёв' }).catch((e) => console.error(e.message))
 console.log('bbr-studio tg poller started')
 

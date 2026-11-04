@@ -116,3 +116,8 @@ CREATE TABLE IF NOT EXISTS tg_masters (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS tg_chat_id bigint;
+
+-- Публичная примерка /try: считаем отдельно от мастера и по адресу, чтобы держать расходы (фото не храним).
+ALTER TABLE ai_images ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'master';
+ALTER TABLE ai_images ADD COLUMN IF NOT EXISTS ip text NOT NULL DEFAULT '';
+CREATE INDEX IF NOT EXISTS ai_images_kind_idx ON ai_images (kind, created_at);

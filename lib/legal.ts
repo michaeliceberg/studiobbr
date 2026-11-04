@@ -10,3 +10,7 @@ export const OPERATOR = {
 // Клиенты сейчас записываются через Dikidi. Включить, когда своя запись проверена, есть напоминания и полное ФИО оператора.
 export const BOOKING_OPEN = false
 export const POLICY_VERSION = '2026-11-04'
+
+// Пока своя запись закрыта (BOOKING_OPEN = false), клиентов с примерки ведём в Dikidi.
+export const DIKIDI_URL = 'https://dikidi.net/978356'
+export const bookingUrl = () => (BOOKING_OPEN ? '/book' : DIKIDI_URL)
