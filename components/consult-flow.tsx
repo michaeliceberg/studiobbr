@@ -101,6 +101,11 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
 
     if (step === 'cuts' && result) return (
         <div className="flex flex-col gap-3">
+            <article className="card flex flex-col gap-3 p-4">
+                <h2 className="text-lg font-bold">Все стрижки на клиенте</h2>
+                <GridPreview clientId={clientId} photo={front} hair={hair} mode="cuts" cuts={result.cuts.slice(0, 4)}
+                    labels={result.cuts.slice(0, 4).map((c, i) => `${i + 1}. ${c.name}`)} button="Показать все стрижки на клиенте" />
+            </article>
             {result.cuts.map((c, i) => (
                 <article key={i} className="card flex flex-col gap-3 p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -111,7 +116,7 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
                     <p className="text-sm text-muted">Верх {c.lengths.top} · макушка {c.lengths.crown} · бока {c.lengths.sides} · затылок {c.lengths.nape} мм</p>
                     <ol className="list-decimal pl-5 text-sm">{c.brief.map((s, j) => <li key={j}>{s}</li>)}</ol>
                     <p className="text-sm text-muted">Укладка: {c.styling}. Обновлять раз в {c.refresh_weeks} нед.</p>
-                    <CutPreview clientId={clientId} photo={front} cut={c} hair={hair} />
+                    <GridPreview clientId={clientId} photo={front} hair={hair} mode="angles" cuts={[c]} labels={ANGLES} button="Показать со всех сторон" />
                     <button className="btn-primary w-full" onClick={() => pick(c)}>Выбрать</button>
                 </article>
             ))}
@@ -173,11 +178,17 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
     )
 }
 
-// Примерка стрижки на фото клиента. Показываем только здесь, после проверки волос руками; картинка никуда не сохраняется.
-function CutPreview({ clientId, photo, cut, hair }: { clientId: number; photo: File | null; cut: Cut; hair: Hair }) {
+const ANGLES = ['Спереди', 'Сбоку', 'Вполоборота', 'Затылок']
+
+// Примерка на фото клиента: одна картинка-сетка 2×2 (четыре стрижки или одна стрижка с четырёх сторон), ~4 цента за сетку.
+// Показываем только здесь, после проверки волос руками; картинка никуда не сохраняется.
+function GridPreview({ clientId, photo, hair, mode, cuts, labels, button }: {
+    clientId: number; photo: File | null; hair: Hair; mode: 'cuts' | 'angles'; cuts: Cut[]; labels: string[]; button: string
+}) {
     const [img, setImg] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [zoom, setZoom] = useState<number | null>(null)
     if (!photo) return <p className="text-sm text-muted">Чтобы примерить стрижку, начните подбор с фото анфас.</p>
     const run = async () => {
         setBusy(true); setError(null)
@@ -185,7 +196,8 @@ function CutPreview({ clientId, photo, cut, hair }: { clientId: number; photo: F
             const f = new FormData()
             f.append('client_id', String(clientId))
             f.append('photo', await compressPhoto(photo), 'photo.jpg')
-            f.append('cut', JSON.stringify({ term: cut.term, lengths: cut.lengths }))
+            f.append('mode', mode)
+            f.append('cuts', JSON.stringify(cuts.map((c) => ({ term: c.term, lengths: c.lengths }))))
             f.append('hair', JSON.stringify(hair))
             const res = await fetch('/api/consult/preview', { method: 'POST', body: f })
             const j = await res.json() as { image?: string; error?: string }
@@ -194,13 +206,29 @@ function CutPreview({ clientId, photo, cut, hair }: { clientId: number; photo: F
         } catch { setError(errText()) }
         setBusy(false)
     }
+    // Клетку вырезаем из сетки CSS-ом: фон 2×2, чуть увеличен, чтобы срезать белые промежутки.
+    const tile = (i: number) => ({ backgroundImage: `url(${img})`, backgroundSize: '206% 206%', backgroundPosition: `${i % 2 ? 100 : 0}% ${i < 2 ? 0 : 100}%` })
     return (
         <div className="flex flex-col gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {img && <img src={img} alt={`Примерка: ${cut.name}`} className="w-full rounded-xl" />}
+            {img && (
+                <div className="grid grid-cols-2 gap-2">
+                    {labels.slice(0, 4).map((l, i) => (
+                        <button type="button" key={i} onClick={() => setZoom(i)} className="relative aspect-square overflow-hidden rounded-xl bg-cover" style={tile(i)}>
+                            <span className="absolute inset-x-0 bottom-0 bg-black/60 px-2 py-1 text-left text-xs font-semibold text-white">{l}</span>
+                        </button>
+                    ))}
+                </div>
+            )}
+            {img && zoom !== null && (
+                <button type="button" onClick={() => setZoom(null)} className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/85 p-4">
+                    <span className="aspect-square w-full max-w-xl rounded-xl bg-cover" style={tile(zoom)} />
+                    <span className="font-semibold text-white">{labels[zoom]}</span>
+                    <span className="text-sm text-white/70">Нажмите, чтобы закрыть</span>
+                </button>
+            )}
             {img && <p className="text-sm text-muted">Это приблизительно. Мастер оценит толщину и густоту ваших волос на консультации.</p>}
             {error && <p className="text-sm font-semibold text-danger">{error}</p>}
-            <button type="button" className="btn-ghost w-full" disabled={busy} onClick={run}><Wand2 size={18} />{busy ? 'Рисую, до минуты…' : img ? 'Нарисовать ещё раз' : 'Показать на клиенте'}</button>
+            <button type="button" className="btn-ghost w-full" disabled={busy} onClick={run}><Wand2 size={18} />{busy ? 'Рисую, до минуты…' : img ? 'Нарисовать ещё раз' : button}</button>
         </div>
     )
 }
