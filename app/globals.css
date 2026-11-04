@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { background: #111614; color: #E7EAE5; }
+body { -webkit-tap-highlight-color: transparent; }
+/* iPhone рисует поля даты по своей ширине и они вылезают из колонки — делаем обычными блоками */
+input[type='date'] { -webkit-appearance: none; appearance: none; display: block; min-width: 0; min-height: 50px; }
+
+@layer components {
+    .card { @apply rounded-2xl border border-line bg-card; }
+    .input { @apply w-full rounded-xl border border-line bg-bg px-3 py-3 text-base text-white outline-none placeholder:text-muted/60 focus:border-brass; }
+    .label { @apply mb-1 block text-sm font-semibold text-muted; }
+    /* крупные кнопки под планшет и телефон; при нажатии тёмная нижняя грань исчезает, кнопка опускается на её высоту */
+    .btn { @apply inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl px-5 text-base font-bold transition-transform; }
+    .btn-primary { @apply btn bg-mint text-[#0D1412] shadow-[0_3px_0_#3E8A75] active:translate-y-[3px] active:shadow-none disabled:opacity-50; }
+    .btn-ghost { @apply btn border border-line bg-card text-white active:translate-y-[1px]; }
+    .btn-danger { @apply btn border border-danger/40 bg-transparent text-danger; }
+    .chip { @apply min-h-[44px] rounded-full border border-line bg-bg px-4 text-sm font-semibold text-white transition-colors; }
+    .chip-on { @apply border-mint bg-mint text-[#0D1412]; }
+}
