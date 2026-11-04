@@ -117,6 +117,28 @@ beard, hairstyle, flat cartoon style with thick black outline. Warm cozy colors,
 Готовые картинки — вырезать фон, белая обводка, 512×512 WebP (скрипт как у Мигеля в ggege:
 `/Users/mac/Desktop/DuoLingoClone/lingo/docs/miguel/tools/make_sticker.py`).
 
+## Как выглядит студия внутри (по фото, 2026-11-04)
+Светлая, не тёмный лофт: белые стены, потолок с точечными лампами, пол — ламинат/плитка «под дерево» серо-бежевый,
+большое окно с жалюзи, кондиционер. Классический барбершоп с винтажными акцентами:
+- **Винтажные барберские кресла** — чёрная стёганая кожа (капитоне), круглая спинка, много хрома, рифлёная подножка.
+  Главная узнаваемая деталь. Есть и кресло с подголовником, и мойка с чёрным креслом.
+- **Большие зеркала** в светлой деревянной раме, под ними чёрные полки-столешницы на кронштейнах.
+- **Чёрные металлические стеллажи** с косметикой (Nishman и др.: гели, пудры, воски, спреи).
+- **Крутящийся барбер-пол** (красно-бело-синий, хром).
+- **Полосатые накидки** (чёрно-белая полоса), чёрный диван для ожидания, кулер, кольцевая лампа, телевизор, часы на стене.
+- На стенах: сертификаты в рамках, чёрная табличка «А вы знаете, что означает Barber's pole?», большие постеры
+  (натюрморт с помазком, опасной бритвой, ножницами; барбер за работой), таблички «I ♥ my clients», «I do not cut 4 free».
+- Машинки и триммеры на резиновых ковриках, расчёски, щётки, фен на держателе.
+
+Как использовать: в рисунках Бехи и в интерфейсе брать эти узнаваемые детали — кресло, барбер-пол, полосатая накидка,
+зеркало в деревянной раме, помазок и бритва. Палитра приложения (тёмная, мята, латунь) — своя, её не менять, но для
+постов/афиш подходит и «как в студии»: чёрно-белое, хром, красно-синие акценты барбер-пола.
+Хижина из легенды — сказочный мир, но внутри у неё те же вещи, чтобы клиент узнал студию. Промпт для неё:
+`Interior of a cozy log cabin barbershop in the forest: one vintage black tufted leather barber chair with chrome details and
+a ribbed footrest, a big mirror in a light wooden frame above a black wall shelf with barber tools, a spinning red-white-blue
+barber pole, a black-and-white striped barber cape, black metal shelves with styling products, framed certificates and a
+poster of a shaving brush and straight razor on the wall, wood stove, warm light through a big window.` (+ хвост сцен выше).
+
 ## Домен (2026-11-04)
 bbr.ru и beha.ru заняты. Свободны на 04.11.2026 (whois.tcinet.ru): bbrstudio.ru, studiobbr.ru, bbrbarber.ru, bbr-studio.ru,
 bbrkorolev.ru, behabarber.ru, lesnoybarber.ru. **Рекомендация: bbrstudio.ru** (совпадает с названием, без дефиса,
