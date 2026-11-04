@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS staff (
     sort   int NOT NULL DEFAULT 0,
     active boolean NOT NULL DEFAULT true
 );
-INSERT INTO staff (id, name, title, sort) VALUES (1, 'Бэха', 'Главный лесничий', 1), (2, 'Влад', 'Барбер', 2) ON CONFLICT DO NOTHING;
+INSERT INTO staff (id, name, title, sort) VALUES (1, 'Бэха', 'Главный лесничий', 1), (2, 'Влад', 'Младший лесник', 2) ON CONFLICT DO NOTHING;
 ALTER TABLE services ADD COLUMN IF NOT EXISTS staff_id int NOT NULL DEFAULT 1 REFERENCES staff(id);
 ALTER TABLE services ADD COLUMN IF NOT EXISTS category text NOT NULL DEFAULT '';
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS staff_id int NOT NULL DEFAULT 1 REFERENCES staff(id);

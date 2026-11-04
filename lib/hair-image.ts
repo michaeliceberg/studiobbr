@@ -2,7 +2,7 @@ import 'server-only'
 import type { Cut, Hair } from './ai'
 
 // Примерка: FLUX Kontext на fal.ai меняет на фото только причёску. sync_mode: картинка приходит прямо в ответе
-// и не сохраняется в истории запросов сервиса. С сервера в России идём через прокси (FAL_API_BASE).
+// и не сохраняется в истории запросов сервиса. fal.run с сервера доступен напрямую; FAL_API_BASE — для тестов.
 const ENDPOINT = '/fal-ai/flux-pro/kontext'
 
 const TEXTURE: Record<string, string> = { 'Прямые': 'straight', 'Волнистые': 'wavy', 'Кудрявые': 'curly' }
