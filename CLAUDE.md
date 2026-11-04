@@ -5,9 +5,11 @@
 Общаться с пользователем по-русски, простыми словами.
 
 ## Состояние (2026-11-04)
-Код написан, `npx tsc --noEmit` чист. **Приложение ни разу не запускалось.** Git: https://github.com/michaeliceberg/studiobbr
-(публичный! секреты только в `.env`, он в .gitignore), ветка main, SSH `git@github.com:michaeliceberg/studiobbr.git`. Нет домена, базы на сервере
-и ключа Anthropic. Первый шаг следующей сессии: `npm run db:local`, `npm run db:init`, `npm run dev` (порт 3006),
+Приложение запущено на сервере (см. «Сервер»). Весь путь мастера пройден локально в браузере 04.11.2026: вход, клиент, визит, фото,
+«Постричь так же», поиск, «Пора», «Откуда», удаление, подбор с подставным ИИ. Настоящий ИИ не проверен. Git: https://github.com/michaeliceberg/studiobbr
+(публичный! секреты только в `.env`, он в .gitignore), ветка main, SSH `git@github.com:michaeliceberg/studiobbr.git`.
+**Генерация картинок причёсок не подключена и сервис не выбран.** В Garaggio и ggege её нет: там Anthropic (читает фото, не рисует) и ElevenLabs (голос).
+Локальный запуск: `npm run db:local`, `npm run db:init`, `npm run dev` (порт 3006),
 пройти всё в браузере; пароль — `MASTER_PASSWORD` в `.env`. Встроенная база (pglite) тоже не проверена: если
 postgres-js с ней не заработает, поставить `max: 1` на время разработки.
 
@@ -24,10 +26,17 @@ Next.js 14 (App Router, server actions), Tailwind 3, postgres-js, lucide-react, 
 - `app/actions.ts` — server actions; `app/(app)/` — страницы мастера; `components/consult-flow.tsx` — подбор в кресле.
 - Схема — `db/schema.sql`, только добавочные изменения (`IF NOT EXISTS`), применять `npm run db:init`.
 
-## Сервер (пока не развёрнуто)
-VPS 168.222.192.167, общий с ggege, Garaggio и asfalt-app: **их никогда не трогать и не перезапускать.** Сборку не запускать
-одновременно с чужой (не хватает памяти): `pgrep -af "[n]ext build"`. Заняты порты 3000, 3001, 3005, 3007; у нас 3006.
-План: `/var/www/bbr-studio`, pm2 `bbr-studio`, своя база и роль в Postgres, фото в `/var/www/bbr-studio-data/uploads`.
+## Сервер (развёрнуто 2026-11-04)
+VPS 168.222.192.167, общий с ggege, Garaggio, docshiroko и asfalt-app: **их никогда не трогать и не перезапускать.** Сборку не
+запускать одновременно с чужой (не хватает памяти): `pgrep -af "[n]ext build"`. Заняты порты 3000, 3001, 3005, 3007; у нас 3006.
+`/var/www/bbr-studio`, pm2 `bbr-studio`, база и роль `bbr_studio` (Postgres 5432), фото в `/var/www/bbr-studio-data/uploads`,
+nginx `/etc/nginx/sites-available/studiobbr.ru`. Пароль входа тот же, что в локальном `.env`.
+Деплой: `cd /var/www/bbr-studio && git pull && npm ci && npm run build && ls .next/BUILD_ID && pm2 restart bbr-studio`.
+Бэкап: cron 03:40, `/root/backups/bbr-studio-backup.sh`, база + фото в `/root/backups/bbr-studio`, хранится 14 дней. Восстановление
+проверено: `sudo -u postgres pg_restore -d <база> --no-owner < файл.dump` (через stdin: у postgres нет доступа к /root).
+DNS на reg.ru (ns1/ns2.hosting.reg.ru): `@` и `www` → 168.222.192.167, остальное — стандартные записи почты reg.ru.
+**Не сделано:** HTTPS (`certbot --nginx -d studiobbr.ru -d www.studiobbr.ru`, nginx пока только порт 80), ждали обновления зоны .ru;
+без HTTPS вход не работает: cookie с флагом Secure. Нет ключа Anthropic. Проверено на сервере: вход, страницы, создание клиента; загрузка фото — нет.
 С сервера Anthropic и Telegram напрямую недоступны, ходить через Cloudflare-прокси (`ANTHROPIC_BASE_URL`, как в Garaggio).
 Прокси рвёт тела больше ~30 КБ, поэтому фото уходит одноразовой ссылкой `/api/tmp-photo/<uuid>` (нужен `PUBLIC_URL`).
 Секреты только в `.env`, не коммитить.
@@ -143,7 +152,7 @@ poster of a shaving brush and straight razor on the wall, wood stove, warm light
 bbr.ru и beha.ru заняты. Свободны на 04.11.2026 (whois.tcinet.ru): bbrstudio.ru, studiobbr.ru, bbrbarber.ru, bbr-studio.ru,
 bbrkorolev.ru, behabarber.ru, lesnoybarber.ru. **Рекомендация: bbrstudio.ru** (совпадает с названием, без дефиса,
 легко продиктовать) + studiobbr.ru переадресацией (на картах сейчас «StudioBBR»). Брать на reg.ru, как garaggio.ru.
-Не куплен — уточнить у пользователя. Название «BBR Studio» закрепить одинаково везде (Карты, 2ГИС, вывеска, ВК).
+Пользователь выбрал и купил **studiobbr.ru** (сообщил 04.11.2026). Название «BBR Studio» закрепить одинаково везде (Карты, 2ГИС, вывеска, ВК).
 
 ## Рынок и деньги
 OldBoy в соседнем доме (Октябрьский, 22), цены на одном уровне: конкурировать вниманием и фишками, а не ценой. «Бородач» — 500+

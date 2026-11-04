@@ -16,13 +16,13 @@ export type Visit = {
 const VISIT = sql`id, client_id, visit_date::text, master, cut_name, len_top, len_crown, len_sides, len_nape, brief, notes, refresh_weeks, next_date::text`
 
 export async function searchClients(q: string) {
-    const like = `%${q.trim().toLowerCase()}%`
+    const like = `%${q.trim().toLowerCase().replace(/ё/g, 'е')}%`
     const digits = q.replace(/\D/g, '')
     return sql<(Client & { last_visit: string | null; last_cut: string | null })[]>`
         SELECT c.*, c.birthday::text, v.visit_date::text AS last_visit, v.cut_name AS last_cut
         FROM clients c
         LEFT JOIN LATERAL (SELECT visit_date, cut_name FROM visits WHERE client_id = c.id ORDER BY visit_date DESC, id DESC LIMIT 1) v ON true
-        WHERE ${q.trim() ? sql`lower(c.name) LIKE ${like} OR (${digits.length >= 3} AND regexp_replace(c.phone, '\D', '', 'g') LIKE ${'%' + digits + '%'})` : sql`true`}
+        WHERE ${q.trim() ? sql`replace(lower(c.name), 'ё', 'е') LIKE ${like} OR (${digits.length >= 3} AND regexp_replace(c.phone, '\\D', '', 'g') LIKE ${'%' + digits + '%'})` : sql`true`}
         ORDER BY v.visit_date DESC NULLS LAST, c.id DESC LIMIT 100`
 }
 export async function getClient(id: number) {

@@ -29,7 +29,9 @@ export default async function VisitPage({ params }: { params: { id: string } }) 
                     {photos.map((p) => <img key={p.id} src={`/api/photos/${p.id}`} alt="Результат" className="aspect-square w-full rounded-xl object-cover" />)}
                 </div>
             )}
-            <AddPhotos visitId={v.id} />
+            {c?.pd_consent_at
+                ? <AddPhotos visitId={v.id} />
+                : <Link href={`/clients/${v.client_id}/edit`} className="card p-4 text-sm text-muted">Фото можно добавить после согласия клиента на съёмку. <span className="text-brass">Отметить в карточке</span></Link>}
             <form action={deleteVisit.bind(null, v.id, v.client_id)}>
                 <ConfirmButton message="Удалить визит и его фото?" className="btn-danger w-full">Удалить визит</ConfirmButton>
             </form>

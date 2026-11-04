@@ -1,10 +1,16 @@
 'use server'
 
+import fs from 'node:fs/promises'
+import path from 'node:path'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { sql } from '@/lib/db'
 import { requireAuth } from '@/lib/auth'
 import { formatPhone, SOURCES } from '@/lib/format'
+
+// На фото лица клиентов: вместе со строкой в базе удаляем и сам файл, иначе он останется на диске навсегда.
+const removeFiles = (rows: { file: string }[]) =>
+    Promise.all(rows.map((r) => fs.rm(path.join(process.env.UPLOAD_DIR!, r.file), { force: true }).catch(() => {})))
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim()
 const mm = (f: FormData, k: string) => { const n = parseInt(s(f, k), 10); return Number.isFinite(n) && n >= 0 && n < 1000 ? n : null }
@@ -32,7 +38,9 @@ export async function saveClient(id: number | null, f: FormData) {
 
 export async function deleteClient(id: number) {
     requireAuth()
+    const files = await sql<{ file: string }[]>`SELECT p.file FROM photos p JOIN visits v ON v.id = p.visit_id WHERE v.client_id = ${id}`
     await sql`DELETE FROM clients WHERE id = ${id}`
+    await removeFiles(files)
     revalidatePath('/')
     redirect('/')
 }
@@ -52,7 +60,9 @@ export async function saveVisit(clientId: number, f: FormData) {
 
 export async function deleteVisit(id: number, clientId: number) {
     requireAuth()
+    const files = await sql<{ file: string }[]>`SELECT file FROM photos WHERE visit_id = ${id}`
     await sql`DELETE FROM visits WHERE id = ${id}`
+    await removeFiles(files)
     revalidatePath(`/clients/${clientId}`)
     redirect(`/clients/${clientId}`)
 }

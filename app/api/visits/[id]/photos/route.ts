@@ -9,8 +9,9 @@ import { isAuthed } from '@/lib/auth'
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     if (!isAuthed()) return NextResponse.json({ error: 'auth' }, { status: 401 })
     const visitId = Number(params.id)
-    const [v] = await sql`SELECT id FROM visits WHERE id = ${visitId}`
+    const [v] = await sql<{ pd_consent_at: Date | null }[]>`SELECT c.pd_consent_at FROM visits v JOIN clients c ON c.id = v.client_id WHERE v.id = ${visitId}`
     if (!v) return NextResponse.json({ error: 'no visit' }, { status: 404 })
+    if (!v.pd_consent_at) return NextResponse.json({ error: 'no-consent' }, { status: 403 })
     const file = (await req.formData()).get('file')
     if (!(file instanceof File) || file.size === 0) return NextResponse.json({ error: 'no file' }, { status: 400 })
     if (file.size > 15 * 1024 * 1024) return NextResponse.json({ error: 'too big' }, { status: 413 })

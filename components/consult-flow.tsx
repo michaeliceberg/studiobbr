@@ -55,11 +55,11 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
             else {
                 // ИИ лишь предлагает: то, что мастер уже проверял раньше, не затираем
                 setHair({
-                    face_shape: a.face_shape || saved.face_shape, hair_density: saved.hair_density || a.hair_density,
+                    face_shape: saved.face_shape || a.face_shape, hair_density: saved.hair_density || a.hair_density,
                     hair_thick: saved.hair_thick || a.hair_thick, hair_texture: saved.hair_texture || a.hair_texture,
                     hair_growth: saved.hair_growth || a.hair_growth,
                 })
-                setWhy(a.face_why); setStep('confirm')
+                setWhy(saved.face_shape ? '' : a.face_why); setStep('confirm')
             }
         } catch { setError(errText()) }
         setBusy(null)

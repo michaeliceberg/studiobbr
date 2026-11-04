@@ -6,6 +6,8 @@ export const telHref = (p: string) => `tel:${p.replace(/[^\d+]/g, '')}`
 export function formatPhone(s: string) {
     let d = s.replace(/\D/g, '')
     if (!d) return ''
+    // Поле уже подставляет «+7», а по привычке набирают 8 или 7: лишняя цифра видна только на 12-й.
+    if (d.length === 12 && (d.startsWith('78') || d.startsWith('77'))) d = '7' + d.slice(2)
     if (d[0] === '8') d = '7' + d.slice(1)
     else if (d[0] === '9') d = '7' + d
     if (d[0] !== '7') return '+' + d.slice(0, 15)
