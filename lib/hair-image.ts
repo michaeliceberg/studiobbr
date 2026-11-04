@@ -9,11 +9,15 @@ const TEXTURE: Record<string, string> = { 'Прямые': 'straight', 'Волн�
 const DENSITY: Record<string, string> = { 'Густые': 'thick, dense', 'Средние': 'medium density', 'Редкие': 'thin, sparse' }
 const THICK: Record<string, string> = { 'Тонкие': 'fine', 'Средние': 'medium', 'Жёсткие': 'coarse' }
 
+// Миллиметры модель не понимает (проверено 04.11.2026: «6 mm» оставляло длинную укладку), поэтому длины описываем словами.
+const lengthWord = (mm: number) => mm <= 3 ? 'clipped very close to the skin' : mm <= 12 ? 'buzzed very short' : mm <= 40 ? 'short' : mm <= 80 ? 'medium length' : 'long'
+
 // В запросе — проверенные мастером волосы: иначе нейросеть нарисует густую шевелюру там, где её не будет.
 export const hairPrompt = (cut: Pick<Cut, 'term' | 'lengths'>, hair: Hair) =>
-    `Change only the hairstyle of this man to a realistic ${cut.term} men's haircut: top ${cut.lengths.top} mm, crown ${cut.lengths.crown} mm, sides ${cut.lengths.sides} mm, nape ${cut.lengths.nape} mm. ` +
-    `Keep his real hair: ${DENSITY[hair.hair_density] ?? ''} ${THICK[hair.hair_thick] ?? ''} ${TEXTURE[hair.hair_texture] ?? ''} hair, same natural color, same hairline, do not add volume he does not have. ` +
-    `Keep exactly the same face, identity, expression, skin, beard, clothes, pose, lighting and background. Photorealistic, natural result, no text.`
+    `Give this man a new haircut: ${cut.term}. The hair on top is ${lengthWord(cut.lengths.top)}, the sides are ${lengthWord(cut.lengths.sides)}, the back is ${lengthWord(cut.lengths.nape)}. ` +
+    `The hair must look clearly different from the original photo, like after a real barber visit. ` +
+    `The new hair is ${DENSITY[hair.hair_density] ?? ''} ${THICK[hair.hair_thick] ?? ''} ${TEXTURE[hair.hair_texture] ?? ''}, in the same natural color, with the same hairline. ` +
+    `Only the hair on the head changes. The face, identity, expression, skin, beard, clothes, pose, lighting and background stay exactly the same. Photorealistic if the photo is a photo, no text.`
 
 export async function generateHairPreview(imageUrl: string, prompt: string) {
     const res = await fetch(`${process.env.FAL_API_BASE || 'https://fal.run'}${ENDPOINT}`, {
