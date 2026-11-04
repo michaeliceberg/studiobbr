@@ -35,8 +35,13 @@ nginx `/etc/nginx/sites-available/studiobbr.ru`. Пароль входа тот 
 Бэкап: cron 03:40, `/root/backups/bbr-studio-backup.sh`, база + фото в `/root/backups/bbr-studio`, хранится 14 дней. Восстановление
 проверено: `sudo -u postgres pg_restore -d <база> --no-owner < файл.dump` (через stdin: у postgres нет доступа к /root).
 DNS на reg.ru (ns1/ns2.hosting.reg.ru): `@` и `www` → 168.222.192.167, остальное — стандартные записи почты reg.ru.
-**Не сделано:** HTTPS (`certbot --nginx -d studiobbr.ru -d www.studiobbr.ru`, nginx пока только порт 80), ждали обновления зоны .ru;
-без HTTPS вход не работает: cookie с флагом Secure. Нет ключа Anthropic. Проверено на сервере: вход, страницы, создание клиента; загрузка фото — нет.
+Хостинг reg.ru `u3709901` (тариф Хост-0) сайту не нужен, сайт работает на VPS. Пока домен на `ns*.hosting.reg.ru`, хостинг не удалять:
+записи могут держаться на нём. Автопродление не включать. Отказаться можно после перевода домена на `ns1/ns2.reg.ru`.
+HTTPS подключён 04.11.2026 (`certbot --nginx`, сертификат Let's Encrypt на studiobbr.ru и www, http → https), до 02.02.2027. Обновляет таймер certbot, настройки как у garaggio.ru.
+Пробное обновление 04.11 не дало ответа: тестовый сервер Let's Encrypt отвечал таймаутом DNS, затем «Service busy». Повторить:
+`certbot renew --dry-run --cert-name studiobbr.ru --no-random-sleep-on-renew`.
+Домен появился в зоне .ru в 16:23 МСК, через 2 часа после регистрации. Статус `UNVERIFIED` в whois работе домена не мешает.
+**Не сделано:** нет ключа Anthropic. Проверено на сервере: страницы, создание клиента; вход с настоящим паролем после HTTPS и загрузка фото — нет.
 С сервера Anthropic и Telegram напрямую недоступны, ходить через Cloudflare-прокси (`ANTHROPIC_BASE_URL`, как в Garaggio).
 Прокси рвёт тела больше ~30 КБ, поэтому фото уходит одноразовой ссылкой `/api/tmp-photo/<uuid>` (нужен `PUBLIC_URL`).
 Секреты только в `.env`, не коммитить.
