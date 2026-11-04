@@ -43,3 +43,47 @@ CREATE TABLE IF NOT EXISTS photos (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS photos_visit_idx ON photos (visit_id);
+
+-- Онлайн-запись (своя вместо Dikidi). Пока один мастер и одно расписание.
+CREATE TABLE IF NOT EXISTS services (
+    id           serial PRIMARY KEY,
+    name         text NOT NULL,
+    duration_min int NOT NULL DEFAULT 60,
+    price        int NOT NULL DEFAULT 0,
+    sort         int NOT NULL DEFAULT 0,
+    active       boolean NOT NULL DEFAULT true
+);
+
+CREATE TABLE IF NOT EXISTS work_hours (
+    weekday   int PRIMARY KEY,                      -- 0 воскресенье … 6 суббота
+    is_open   boolean NOT NULL DEFAULT true,
+    open_min  int NOT NULL DEFAULT 600,             -- минуты от полуночи по Москве
+    close_min int NOT NULL DEFAULT 1260
+);
+INSERT INTO work_hours (weekday) VALUES (0), (1), (2), (3), (4), (5), (6) ON CONFLICT DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS closed_days (day date PRIMARY KEY);
+
+CREATE TABLE IF NOT EXISTS appointments (
+    id          serial PRIMARY KEY,
+    token       uuid NOT NULL DEFAULT gen_random_uuid() UNIQUE,  -- личная ссылка клиента на запись
+    client_id   int REFERENCES clients(id) ON DELETE CASCADE,
+    service_id  int REFERENCES services(id) ON DELETE SET NULL,
+    service_name text NOT NULL DEFAULT '',          -- как называлась услуга на момент записи
+    name        text NOT NULL DEFAULT '',
+    phone       text NOT NULL DEFAULT '',
+    comment     text NOT NULL DEFAULT '',
+    starts_at   timestamptz NOT NULL,
+    ends_at     timestamptz NOT NULL,
+    status      text NOT NULL DEFAULT 'booked',     -- booked, cancelled
+    source      text NOT NULL DEFAULT 'online',     -- online, master
+    consent_at  timestamptz,                        -- согласие на обработку данных при онлайн-записи
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    -- два клиента на одно время физически не запишутся, даже если нажмут одновременно
+    EXCLUDE USING gist (tstzrange(starts_at, ends_at) WITH &&) WHERE (status = 'booked')
+);
+CREATE INDEX IF NOT EXISTS appointments_starts_idx ON appointments (starts_at);
+CREATE INDEX IF NOT EXISTS appointments_phone_idx ON appointments (phone);
+
+-- Счётчик картинок примерки: только время, чтобы держать дневной лимит расходов. Сами фото не храним.
+CREATE TABLE IF NOT EXISTS ai_images (id serial PRIMARY KEY, created_at timestamptz NOT NULL DEFAULT now());

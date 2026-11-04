@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Users, Plus, BellRing, MapPin } from 'lucide-react'
+import { Users, Plus, BellRing, MapPin, CalendarDays } from 'lucide-react'
 
 // Нижнее меню: «+ Клиент» посередине, под большой палец.
 export function BottomNav() {
@@ -14,8 +14,9 @@ export function BottomNav() {
     )
     return (
         <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-            <div className="mx-auto grid max-w-2xl grid-cols-4">
+            <div className="mx-auto grid max-w-2xl grid-cols-5">
                 {item('/', Users, 'Клиенты', p === '/' || (p.startsWith('/clients') && p !== '/clients/new') || p.startsWith('/visits'))}
+                {item('/schedule', CalendarDays, 'Запись', p.startsWith('/schedule'))}
                 <Link href="/clients/new" aria-label="Новый клиент" className="flex flex-col items-center gap-1 pb-2.5 text-xs font-semibold text-mint">
                     <span className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full border-4 border-bg bg-mint text-[#0D1412]"><Plus size={28} strokeWidth={3} /></span>
                     Клиент

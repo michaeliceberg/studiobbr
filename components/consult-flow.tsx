@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Camera } from 'lucide-react'
+import { Camera, Wand2 } from 'lucide-react'
 import { acceptConsent, confirmHair } from '@/app/actions'
 import { compressPhoto } from '@/lib/photo-client'
 import { FACE_SHAPES, HAIR_DENSITY, HAIR_TEXTURE, HAIR_THICK } from '@/lib/format'
@@ -18,6 +18,8 @@ const PREFS: { key: Exclude<keyof Prefs, 'wish'>; title: string; options: string
 const ERR: Record<string, string> = {
     'no-ai': 'ИИ не подключён: нет ключа на сервере.',
     'no-consent': 'Сначала отметьте согласие клиента.',
+    'no-image-ai': 'Примерка не подключена: нет ключа на сервере.',
+    limit: 'На сегодня лимит примерок исчерпан.',
     ai: 'ИИ не ответил. Нажмите ещё раз.',
 }
 const errText = (code?: string) => ERR[code ?? ''] ?? 'Что-то пошло не так. Нажмите ещё раз.'
@@ -102,6 +104,7 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
                     <p className="text-sm text-muted">Верх {c.lengths.top} · макушка {c.lengths.crown} · бока {c.lengths.sides} · затылок {c.lengths.nape} мм</p>
                     <ol className="list-decimal pl-5 text-sm">{c.brief.map((s, j) => <li key={j}>{s}</li>)}</ol>
                     <p className="text-sm text-muted">Укладка: {c.styling}. Обновлять раз в {c.refresh_weeks} нед.</p>
+                    <CutPreview clientId={clientId} photo={front} cut={c} hair={hair} />
                     <button className="btn-primary w-full" onClick={() => pick(c)}>Выбрать</button>
                 </article>
             ))}
@@ -159,6 +162,38 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
             {error && <p className="text-sm font-semibold text-danger">{error}</p>}
             <button className="btn-primary w-full" disabled={!front || !consent || !!busy} onClick={analyze}>{busy ?? 'Разобрать фото'}</button>
             <button className="btn-ghost w-full" onClick={() => setStep('confirm')}>Без фото, задать параметры вручную</button>
+        </div>
+    )
+}
+
+// Примерка стрижки на фото клиента. Показываем только здесь, после проверки волос руками; картинка никуда не сохраняется.
+function CutPreview({ clientId, photo, cut, hair }: { clientId: number; photo: File | null; cut: Cut; hair: Hair }) {
+    const [img, setImg] = useState<string | null>(null)
+    const [busy, setBusy] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    if (!photo) return <p className="text-sm text-muted">Чтобы примерить стрижку, начните подбор с фото анфас.</p>
+    const run = async () => {
+        setBusy(true); setError(null)
+        try {
+            const f = new FormData()
+            f.append('client_id', String(clientId))
+            f.append('photo', await compressPhoto(photo), 'photo.jpg')
+            f.append('cut', JSON.stringify({ term: cut.term, lengths: cut.lengths }))
+            f.append('hair', JSON.stringify(hair))
+            const res = await fetch('/api/consult/preview', { method: 'POST', body: f })
+            const j = await res.json() as { image?: string; error?: string }
+            if (j.image) setImg(j.image)
+            else setError(errText(j.error))
+        } catch { setError(errText()) }
+        setBusy(false)
+    }
+    return (
+        <div className="flex flex-col gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {img && <img src={img} alt={`Примерка: ${cut.name}`} className="w-full rounded-xl" />}
+            {img && <p className="text-sm text-muted">Это приблизительно. Мастер оценит толщину и густоту ваших волос на консультации.</p>}
+            {error && <p className="text-sm font-semibold text-danger">{error}</p>}
+            <button type="button" className="btn-ghost w-full" disabled={busy} onClick={run}><Wand2 size={18} />{busy ? 'Рисую, до минуты…' : img ? 'Нарисовать ещё раз' : 'Показать на клиенте'}</button>
         </div>
     )
 }

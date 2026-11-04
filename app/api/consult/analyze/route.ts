@@ -1,12 +1,8 @@
-import fs from 'node:fs/promises'
-import crypto from 'node:crypto'
-import path from 'node:path'
 import { NextResponse } from 'next/server'
 import { isAuthed } from '@/lib/auth'
 import { getClient } from '@/lib/data'
 import { analyzePhoto, type PhotoInput } from '@/lib/ai'
-
-const TMP_DIR = () => path.join(process.env.UPLOAD_DIR!, 'tmp')
+import { removeTmpPhotos, saveTmpPhoto } from '@/lib/tmp-photo'
 
 // Шаг 1 подбора. Фото клиента не сохраняем: только временный файл с одноразовой ссылкой (прокси рвёт большие тела),
 // после разбора он удаляется. Без согласия клиента фото не принимаем.
@@ -21,20 +17,12 @@ export async function POST(req: Request) {
     if (!blobs.length) return NextResponse.json({ error: 'bad' }, { status: 400 })
     const files: string[] = []
     try {
-        await fs.mkdir(TMP_DIR(), { recursive: true })
-        // подчистить забытые старше 10 минут
-        for (const n of await fs.readdir(TMP_DIR())) {
-            const st = await fs.stat(path.join(TMP_DIR(), n)).catch(() => null)
-            if (st && Date.now() - st.mtimeMs > 600_000) await fs.rm(path.join(TMP_DIR(), n), { force: true })
-        }
         const photos: PhotoInput[] = await Promise.all(blobs.map(async (b) => {
             const buf = Buffer.from(await b.arrayBuffer())
             if (!process.env.ANTHROPIC_BASE_URL) return { base64: buf.toString('base64') }
-            const id = crypto.randomUUID()
-            const file = path.join(TMP_DIR(), `${id}.jpg`)
-            await fs.writeFile(file, buf)
-            files.push(file)
-            return { url: `${process.env.PUBLIC_URL}/api/tmp-photo/${id}` }
+            const t = await saveTmpPhoto(buf)
+            files.push(t.file)
+            return { url: t.url }
         }))
         let a = await analyzePhoto(photos)
         // быстрая модель не разобрала — пробуем модель посильнее
@@ -44,6 +32,6 @@ export async function POST(req: Request) {
         console.error('consult/analyze', e)
         return NextResponse.json({ error: 'ai' }, { status: 502 })
     } finally {
-        await Promise.all(files.map((f) => fs.rm(f, { force: true })))
+        await removeTmpPhotos(files)
     }
 }
