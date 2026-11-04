@@ -64,3 +64,35 @@ input[type='date'] { -webkit-appearance: none; appearance: none; display: block;
 .try-tab { box-shadow: 0 -6px 14px rgba(0, 0, 0, .25); }
 .try-tab-icon { animation: try-tab-hint 5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .try-tab-icon { animation: none; } }
+
+/* Нижнее меню (как в Garaggio): «таблетка» под иконкой выбранного раздела, иконка подпрыгивает при выборе */
+.nav-pill { display: flex; height: 32px; width: 56px; align-items: center; justify-content: center; border-radius: 9999px; transition: background-color .3s, box-shadow .3s; }
+.nav-pill-on { background: rgba(212, 176, 106, .16); box-shadow: 0 0 14px rgba(212, 176, 106, .28); animation: nav-bounce .55s cubic-bezier(.28, .84, .42, 1); }
+@keyframes nav-bounce {
+    0% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-7px) scale(1.12); }
+    55% { transform: translateY(0) scale(.95); }
+    75% { transform: translateY(-2px) scale(1.03); }
+    100% { transform: translateY(0) scale(1); }
+}
+/* «+ Клиент»: кольцо из латуни и мяты медленно крутится, позади мягко дышит свечение; кнопка нажимается вниз */
+@keyframes nav-plus-spin { to { transform: rotate(360deg); } }
+.nav-plus { position: relative; display: flex; height: 64px; width: 64px; align-items: center; justify-content: center; border-radius: 9999px; isolation: isolate; }
+.nav-plus::before {
+    content: ''; position: absolute; inset: 0; border-radius: 9999px; z-index: -2;
+    background: conic-gradient(from 0deg, #D4B06A, #F2A35B, #6CC0A8, #8FD6F0, #D4B06A);
+    animation: nav-plus-spin 6s linear infinite;
+}
+.nav-plus::after {
+    content: ''; position: absolute; inset: -8px; border-radius: 9999px; z-index: -3;
+    background: radial-gradient(closest-side, rgba(108, 192, 168, .45), transparent);
+    animation: magic-pulse 3s ease-in-out infinite;
+}
+.nav-plus-core {
+    display: flex; height: 54px; width: 54px; align-items: center; justify-content: center; border-radius: 9999px;
+    background: #6CC0A8; color: #0D1412; box-shadow: 0 3px 0 #3E8A75, inset 0 2px 0 rgba(255, 255, 255, .35);
+    transition: transform .1s;
+}
+.nav-plus:active .nav-plus-core { transform: translateY(3px); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .35); }
+.nav-plus-on { animation: nav-bounce .55s cubic-bezier(.28, .84, .42, 1); }
+@media (prefers-reduced-motion: reduce) { .nav-pill-on, .nav-plus-on, .nav-plus::before, .nav-plus::after { animation: none; } }

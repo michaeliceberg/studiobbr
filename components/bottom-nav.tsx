@@ -1,17 +1,37 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Users, Plus, BellRing, MapPin, CalendarDays, Sparkles } from 'lucide-react'
 
-// Нижнее меню: «+ Клиент» посередине, под большой палец.
+type Tab = 'clients' | 'schedule' | 'new' | 'due' | 'sources' | null
+const tabOf = (p: string): Tab =>
+    p === '/clients/new' ? 'new'
+        : p === '/' || p.startsWith('/clients') || p.startsWith('/visits') ? 'clients'
+            : p.startsWith('/schedule') ? 'schedule'
+                : p.startsWith('/due') ? 'due'
+                    : p.startsWith('/sources') ? 'sources' : null
+
+// Нижнее меню, как в Garaggio: выбранный раздел — иконка подпрыгивает, под ней светится «таблетка».
+// Подсвечиваем сразу по нажатию (страница может грузиться секунду), потом — по адресу.
+// «+ Клиент» посередине, под большой палец: приподнятая кнопка с переливающимся кольцом.
 export function BottomNav() {
-    const p = usePathname()
-    const item = (href: string, Icon: typeof Users, label: string, on: boolean) => (
-        <Link href={href} aria-current={on ? 'page' : undefined} className={`flex flex-col items-center gap-1 py-2.5 text-xs font-semibold ${on ? 'text-brass' : 'text-muted'}`}>
-            <Icon size={24} strokeWidth={on ? 2.4 : 2} />{label}
-        </Link>
-    )
+    const pathname = usePathname()
+    const [tapped, setTapped] = useState<Tab>(null)
+    useEffect(() => setTapped(null), [pathname])
+    const active = tapped ?? tabOf(pathname)
+
+    const item = (tab: Exclude<Tab, 'new' | null>, href: string, Icon: typeof Users, label: string) => {
+        const on = active === tab
+        return (
+            <Link href={href} onClick={() => setTapped(tab)} aria-current={on ? 'page' : undefined}
+                className={`flex flex-col items-center gap-1 py-2.5 text-xs font-semibold transition-colors duration-300 ${on ? 'text-brass' : 'text-muted'}`}>
+                <span key={on ? 'on' : 'off'} className={`nav-pill ${on ? 'nav-pill-on' : ''}`}><Icon size={24} strokeWidth={on ? 2.4 : 2} /></span>
+                {label}
+            </Link>
+        )
+    }
     return (
         <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
             {/* ушко, как «Ещё» в Garaggio: открытая всем примерка /try — показать клиенту или скинуть ссылку */}
@@ -22,14 +42,17 @@ export function BottomNav() {
                 </Link>
             </div>
             <div className="mx-auto grid max-w-2xl grid-cols-5">
-                {item('/', Users, 'Клиенты', p === '/' || (p.startsWith('/clients') && p !== '/clients/new') || p.startsWith('/visits'))}
-                {item('/schedule', CalendarDays, 'Запись', p.startsWith('/schedule'))}
-                <Link href="/clients/new" aria-label="Новый клиент" className="flex flex-col items-center gap-1 pb-2.5 text-xs font-semibold text-mint">
-                    <span className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full border-4 border-bg bg-mint text-[#0D1412]"><Plus size={28} strokeWidth={3} /></span>
+                {item('clients', '/', Users, 'Клиенты')}
+                {item('schedule', '/schedule', CalendarDays, 'Запись')}
+                <Link href="/clients/new" onClick={() => setTapped('new')} aria-label="Новый клиент" aria-current={active === 'new' ? 'page' : undefined}
+                    className="flex flex-col items-center gap-1 pb-2.5 text-xs font-semibold text-mint">
+                    <span key={active === 'new' ? 'on' : 'off'} className={`nav-plus -mt-6 ${active === 'new' ? 'nav-plus-on' : ''}`}>
+                        <span className="nav-plus-core"><Plus size={28} strokeWidth={3} /></span>
+                    </span>
                     Клиент
                 </Link>
-                {item('/due', BellRing, 'Пора', p.startsWith('/due'))}
-                {item('/sources', MapPin, 'Откуда', p.startsWith('/sources'))}
+                {item('due', '/due', BellRing, 'Пора')}
+                {item('sources', '/sources', MapPin, 'Откуда')}
             </div>
         </nav>
     )
