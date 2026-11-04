@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { Beha } from '@/components/beha'
 import { isAuthed } from '@/lib/auth'
+import { MagicLink } from '@/components/magic-button'
 
 // Обычная форма (работает даже без JS): POST /api/login.
 export default function LoginPage({ searchParams }: { searchParams: { error?: string } }) {
@@ -15,6 +16,10 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
                 {searchParams.error && <p className="text-sm font-semibold text-danger">Неверный пароль</p>}
                 <button className="btn-primary w-full">Войти</button>
             </form>
+            <div className="flex flex-col gap-2">
+                <p className="text-center text-sm text-muted">Вы клиент?</p>
+                <MagicLink href="/try" title="Примерь стрижку" subtitle="Селфи — и нейросеть покажет 4 стрижки на вас" />
+            </div>
         </main>
     )
 }

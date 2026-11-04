@@ -58,3 +58,9 @@ input[type='date'] { -webkit-appearance: none; appearance: none; display: block;
 @media (prefers-reduced-motion: reduce) {
     .btn-magic, .btn-magic::after, .btn-magic .magic-icon, .btn-magic .magic-spark, .magic-halo { animation: none !important; }
 }
+
+/* Ушко «Примерка» над нижним меню: иконка изредка подпрыгивает и мерцает — намёк «нажми» */
+@keyframes try-tab-hint { 0%, 84%, 100% { transform: none; opacity: 1; } 89% { transform: translateY(-3px) rotate(14deg) scale(1.2); opacity: .7; } 94% { transform: translateY(1px); } }
+.try-tab { box-shadow: 0 -6px 14px rgba(0, 0, 0, .25); }
+.try-tab-icon { animation: try-tab-hint 5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .try-tab-icon { animation: none; } }

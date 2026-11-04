@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Users, Plus, BellRing, MapPin, CalendarDays } from 'lucide-react'
+import { Users, Plus, BellRing, MapPin, CalendarDays, Sparkles } from 'lucide-react'
 
 // Нижнее меню: «+ Клиент» посередине, под большой палец.
 export function BottomNav() {
@@ -14,6 +14,13 @@ export function BottomNav() {
     )
     return (
         <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+            {/* ушко, как «Ещё» в Garaggio: открытая всем примерка /try — показать клиенту или скинуть ссылку */}
+            <div className="relative mx-auto max-w-2xl">
+                <Link href="/try" aria-label="Примерка стрижек для клиентов"
+                    className="try-tab absolute -top-[31px] right-3 flex h-[31px] items-center gap-1 rounded-t-xl border border-b-0 border-brass/50 bg-bg px-3 text-xs font-bold text-brass">
+                    <Sparkles size={15} strokeWidth={2.6} className="try-tab-icon" />Примерка
+                </Link>
+            </div>
             <div className="mx-auto grid max-w-2xl grid-cols-5">
                 {item('/', Users, 'Клиенты', p === '/' || (p.startsWith('/clients') && p !== '/clients/new') || p.startsWith('/visits'))}
                 {item('/schedule', CalendarDays, 'Запись', p.startsWith('/schedule'))}
