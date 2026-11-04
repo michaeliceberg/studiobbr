@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Camera, Wand2 } from 'lucide-react'
+import { Camera, Check, Wand2 } from 'lucide-react'
+import { MagicButton } from './magic-button'
 import { acceptConsent, confirmHair } from '@/app/actions'
 import { compressPhoto } from '@/lib/photo-client'
 import { FACE_SHAPES, HAIR_DENSITY, HAIR_TEXTURE, HAIR_THICK } from '@/lib/format'
@@ -24,6 +25,22 @@ const ERR: Record<string, string> = {
     ai: 'ИИ не ответил. Нажмите ещё раз.',
 }
 const errText = (code?: string) => ERR[code ?? ''] ?? 'Что-то пошло не так. Нажмите ещё раз.'
+
+const STEPS = [['photo', 'Фото'], ['confirm', 'Волосы'], ['cuts', 'Стрижки']] as const
+function StepBar({ step }: { step: 'photo' | 'confirm' | 'cuts' }) {
+    const cur = STEPS.findIndex(([k]) => k === step)
+    return (
+        <ol className="grid grid-cols-3 gap-1.5">
+            {STEPS.map(([k, label], i) => (
+                <li key={k} className={`flex min-w-0 items-center justify-center gap-1.5 rounded-xl border px-1.5 py-2 text-[13px] font-bold ${i === cur ? 'border-brass bg-brass/15 text-brass' : i < cur ? 'border-mint/40 text-mint' : 'border-line text-muted'}`}>
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${i === cur ? 'bg-brass text-[#1b1407]' : i < cur ? 'bg-mint text-[#0D1412]' : 'bg-line text-muted'}`}>
+                        {i < cur ? <Check size={14} strokeWidth={3} /> : i + 1}
+                    </span>{label}
+                </li>
+            ))}
+        </ol>
+    )
+}
 
 // Подбор стрижки в кресле: фото → ИИ прикидывает лицо и волосы → мастер ПОДТВЕРЖДАЕТ руками → только тогда варианты.
 // Порядок менять нельзя: иначе ИИ предложит то, что на этих волосах не получится.
@@ -86,25 +103,31 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
         router.push(`/clients/${clientId}/visits/new?${q}`)
     }
     const shot = (label: string, file: File | null, onPick: (f: File) => void) => (
-        <label className="card flex aspect-[3/4] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden text-sm text-muted">
+        <label className={`card flex aspect-[3/4] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden text-sm font-semibold ${file ? 'border-mint' : 'border-dashed border-brass/60 text-brass'}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            {file ? <img src={URL.createObjectURL(file)} alt={label} className="h-full w-full object-cover" /> : <><Camera size={32} />{label}</>}
+            {file ? <img src={URL.createObjectURL(file)} alt={label} className="h-full w-full object-cover" /> : <><span className="flex h-14 w-14 items-center justify-center rounded-full bg-brass/15"><Camera size={28} /></span>{label}</>}
             <input type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); e.target.value = '' }} />
         </label>
     )
 
     if (busy) return (
-        <div className="card flex flex-col items-center gap-3 p-6 text-center font-semibold">
-            <Beha pose="think" size={200} />{busy}
+        <div className="flex flex-col gap-4">
+            <StepBar step={step} />
+            <div className="card relative isolate flex flex-col items-center gap-3 overflow-hidden p-6 text-center font-semibold">
+                <span aria-hidden className="magic-halo" />
+                <Beha pose="think" size={200} />{busy}
+            </div>
         </div>
     )
 
     if (step === 'cuts' && result) return (
         <div className="flex flex-col gap-3">
-            <article className="card flex flex-col gap-3 p-4">
-                <h2 className="text-lg font-bold">Все стрижки на клиенте</h2>
+            <StepBar step="cuts" />
+            <article className="card relative isolate flex flex-col gap-3 overflow-hidden border-brass/60 p-4 shadow-[0_0_24px_rgba(212,176,106,0.18)]">
+                <span aria-hidden className="magic-halo" />
+                <div><h2 className="text-lg font-black text-brass">Все стрижки на клиенте</h2><p className="text-sm text-muted">Одна картинка — 4 образа. Нажмите на клетку, чтобы увеличить.</p></div>
                 <GridPreview clientId={clientId} photo={front} hair={hair} mode="cuts" cuts={result.cuts.slice(0, 4)}
-                    labels={result.cuts.slice(0, 4).map((c, i) => `${i + 1}. ${c.name}`)} button="Показать все стрижки на клиенте" />
+                    labels={result.cuts.slice(0, 4).map((c, i) => `${i + 1}. ${c.name}`)} button="Показать все стрижки на клиенте" subtitle="4 стрижки на фото клиента, до минуты" magic />
             </article>
             {result.cuts.map((c, i) => (
                 <article key={i} className="card flex flex-col gap-3 p-4">
@@ -131,6 +154,7 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
 
     if (step === 'confirm') return (
         <div className="flex flex-col gap-4">
+            <StepBar step="confirm" />
             <div className="card border-brass/50 bg-brass/10 p-4 text-sm">
                 <b className="text-brass">Проверьте руками.</b> Это прикидка по фото. Густоту, толщину и вихры видно только на настоящих волосах.
                 {why && <span className="mt-1 block text-muted">{why}</span>}
@@ -146,13 +170,14 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
                 </div>
             </div>
             {error && <p className="text-sm font-semibold text-danger">{error}</p>}
-            <button className="btn-primary w-full" disabled={!confirmed || !!busy} onClick={suggest}>{busy ?? 'Подтверждаю, показать стрижки'}</button>
+            <MagicButton title="Подтверждаю, показать стрижки" subtitle="Подберу 4 стрижки под эти волосы" disabled={!confirmed} onClick={suggest} />
             <button className="btn-ghost w-full" onClick={() => setStep('photo')}>Назад</button>
         </div>
     )
 
     return (
         <div className="flex flex-col gap-4">
+            <StepBar step="photo" />
             <div className="grid grid-cols-2 gap-3">
                 {shot('Анфас', front, setFront)}
                 {shot('Профиль, по желанию', side, setSide)}
@@ -172,7 +197,7 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
                 </div>
             </div>
             {error && <p className="text-sm font-semibold text-danger">{error}</p>}
-            <button className="btn-primary w-full" disabled={!front || !consent || !!busy} onClick={analyze}>{busy ?? 'Разобрать фото'}</button>
+            <MagicButton title="Разобрать фото" subtitle={!front ? 'Сначала сфоткайте клиента анфас' : !consent ? 'Отметьте согласие клиента' : 'Определю форму лица и волосы'} disabled={!front || !consent} onClick={analyze} />
             <button className="btn-ghost w-full" onClick={() => setStep('confirm')}>Без фото, задать параметры вручную</button>
         </div>
     )
@@ -182,8 +207,8 @@ const ANGLES = ['Спереди', 'Сбоку', 'Вполоборота', 'За�
 
 // Примерка на фото клиента: одна картинка-сетка 2×2 (четыре стрижки или одна стрижка с четырёх сторон), ~4 цента за сетку.
 // Показываем только здесь, после проверки волос руками; картинка никуда не сохраняется.
-function GridPreview({ clientId, photo, hair, mode, cuts, labels, button }: {
-    clientId: number; photo: File | null; hair: Hair; mode: 'cuts' | 'angles'; cuts: Cut[]; labels: string[]; button: string
+function GridPreview({ clientId, photo, hair, mode, cuts, labels, button, subtitle, magic }: {
+    clientId: number; photo: File | null; hair: Hair; mode: 'cuts' | 'angles'; cuts: Cut[]; labels: string[]; button: string; subtitle?: string; magic?: boolean
 }) {
     const [img, setImg] = useState<string | null>(null)
     const [busy, setBusy] = useState(false)
@@ -228,7 +253,9 @@ function GridPreview({ clientId, photo, hair, mode, cuts, labels, button }: {
             )}
             {img && <p className="text-sm text-muted">Это приблизительно. Мастер оценит толщину и густоту ваших волос на консультации.</p>}
             {error && <p className="text-sm font-semibold text-danger">{error}</p>}
-            <button type="button" className="btn-ghost w-full" disabled={busy} onClick={run}><Wand2 size={18} />{busy ? 'Рисую, до минуты…' : img ? 'Нарисовать ещё раз' : button}</button>
+            {magic && !img
+                ? <MagicButton title={busy ? 'Рисую, до минуты…' : button} subtitle={busy ? 'Примеряю 4 стрижки' : subtitle} busy={busy} onClick={run} />
+                : <button type="button" className="btn-ghost w-full" disabled={busy} onClick={run}><Wand2 size={18} />{busy ? 'Рисую, до минуты…' : img ? 'Нарисовать ещё раз' : button}</button>}
         </div>
     )
 }

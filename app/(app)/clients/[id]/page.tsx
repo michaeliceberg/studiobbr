@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronRight, Pencil, Phone, Scissors, Sparkles } from 'lucide-react'
+import { ChevronRight, Pencil, Phone, Scissors } from 'lucide-react'
 import { getClient, getVisits } from '@/lib/data'
+import { MagicLink } from '@/components/magic-button'
 import { dateRu, hairLine, lengthsLine, sourceLabel, telHref } from '@/lib/format'
 
 export default async function ClientPage({ params }: { params: { id: string } }) {
@@ -36,7 +37,7 @@ export default async function ClientPage({ params }: { params: { id: string } })
                 {c.notes && <p className="text-sm">{c.notes}</p>}
             </section>
 
-            <Link href={`/clients/${id}/consult`} className="btn-primary w-full"><Sparkles size={20} />Подобрать стрижку</Link>
+            <MagicLink href={`/clients/${id}/consult`} title="Примерить стрижки" subtitle="Сфоткай клиента — покажу 4 стрижки прямо на нём" />
             <Link href={`/clients/${id}/visits/new${last ? '?repeat=1' : ''}`} className="btn-ghost w-full"><Scissors size={18} />{last ? 'Постричь так же' : 'Новый визит'}</Link>
 
             {visits.length > 0 && (

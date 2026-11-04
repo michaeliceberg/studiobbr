@@ -19,3 +19,42 @@ input[type='date'] { -webkit-appearance: none; appearance: none; display: block;
     .chip { @apply min-h-[44px] rounded-full border border-line bg-bg px-4 text-sm font-semibold text-white transition-colors; }
     .chip-on { @apply border-mint bg-mint text-[#0D1412]; }
 }
+
+/* «Волшебная» кнопка примерки — как «ИИ-помощник» в ggege и «Послушать» в Garaggio: переливающийся градиент,
+   бегущий блик, искры, мерцающая иконка. Только transform/opacity/background-position. Цвета — латунь BBR + мята. */
+@keyframes magic-flow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+@keyframes magic-shine { 0%, 60% { transform: translateX(-120%) skewX(-20deg); } 100% { transform: translateX(260%) skewX(-20deg); } }
+@keyframes magic-twinkle { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; } 50% { transform: scale(1.25) rotate(18deg); opacity: .75; } }
+@keyframes magic-spark { 0% { transform: translateY(0) scale(0); opacity: 0; } 30% { opacity: 1; transform: translateY(-6px) scale(1); } 100% { transform: translateY(-22px) scale(0); opacity: 0; } }
+@keyframes magic-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.btn-magic {
+    position: relative; overflow: hidden; isolation: isolate;
+    display: flex; min-height: 52px; align-items: center; justify-content: center; gap: .5rem;
+    border-radius: .9rem; padding: 0 1.1rem; font-weight: 900; color: #1b1407;
+    background: linear-gradient(110deg, #E8C579, #F2A35B, #6CC0A8, #8FD6F0, #E8C579, #F2A35B);
+    background-size: 200% 100%; animation: magic-flow 5s linear infinite;
+    box-shadow: 0 4px 0 #8A6A2E, 0 0 16px rgba(212, 176, 106, .35);
+    -webkit-tap-highlight-color: transparent;
+}
+.btn-magic:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0 16px rgba(212, 176, 106, .35); }
+.btn-magic:disabled { opacity: .6; }
+.btn-magic::after {
+    content: ''; position: absolute; inset: 0; z-index: -1; width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .7), transparent);
+    animation: magic-shine 2.8s ease-in-out infinite;
+}
+.btn-magic .magic-icon { animation: magic-twinkle 1.6s ease-in-out infinite; }
+.btn-magic .magic-spark {
+    position: absolute; bottom: 8px; width: 5px; height: 5px; border-radius: 9999px; background: #fff; pointer-events: none;
+    box-shadow: 0 0 6px 2px rgba(255, 255, 255, .9); animation: magic-spark 1.8s ease-out infinite;
+}
+.btn-magic[data-state='busy'] { animation: magic-flow 1.2s linear infinite; }
+/* Мягкое свечение позади шапки примерки */
+.magic-halo {
+    position: absolute; inset: -40px 0 auto; height: 220px; pointer-events: none; z-index: -1;
+    background: radial-gradient(closest-side, rgba(212, 176, 106, .28), rgba(108, 192, 168, .12) 55%, transparent);
+    animation: magic-pulse 4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .btn-magic, .btn-magic::after, .btn-magic .magic-icon, .btn-magic .magic-spark, .magic-halo { animation: none !important; }
+}
