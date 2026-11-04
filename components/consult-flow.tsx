@@ -7,6 +7,7 @@ import { acceptConsent, confirmHair } from '@/app/actions'
 import { compressPhoto } from '@/lib/photo-client'
 import { FACE_SHAPES, HAIR_DENSITY, HAIR_TEXTURE, HAIR_THICK } from '@/lib/format'
 import type { Analysis, Cut, Hair, Prefs, Suggestion } from '@/lib/ai'
+import { Beha } from './beha'
 import { Chips } from './chips'
 
 const PREFS: { key: Exclude<keyof Prefs, 'wish'>; title: string; options: string[] }[] = [
@@ -90,6 +91,12 @@ export function ConsultFlow({ clientId, hasConsent, saved }: { clientId: number;
             {file ? <img src={URL.createObjectURL(file)} alt={label} className="h-full w-full object-cover" /> : <><Camera size={32} />{label}</>}
             <input type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); e.target.value = '' }} />
         </label>
+    )
+
+    if (busy) return (
+        <div className="card flex flex-col items-center gap-3 p-6 text-center font-semibold">
+            <Beha pose="think" size={200} />{busy}
+        </div>
     )
 
     if (step === 'cuts' && result) return (

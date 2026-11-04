@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Beha, BehaNote } from '@/components/beha'
 import { BookingFlow } from '@/components/booking-flow'
 import { isAuthed } from '@/lib/auth'
 import { addDays, getClosedDays, getServices, getStaff, getWorkHours, HORIZON_DAYS, mskToday } from '@/lib/booking'
@@ -17,14 +18,22 @@ export default async function BookPage() {
         !closed.includes(d) && hours.find((h) => h.weekday === new Date(`${d}T12:00:00+03:00`).getUTCDay())?.is_open)
     return (
         <main className="mx-auto flex min-h-screen max-w-xl flex-col gap-5 p-4 pb-12">
-            <header>
-                <h1 className="text-3xl font-black tracking-wide text-brass">BBR Studio</h1>
-                <p className="text-sm text-muted">{OPERATOR.address}</p>
+            <header className="flex items-center gap-3">
+                <Beha pose="hello-2" size={96} className="shrink-0" />
+                <div className="min-w-0">
+                    <h1 className="text-3xl font-black tracking-wide text-brass">BBR Studio</h1>
+                    <p className="text-sm text-muted">{OPERATOR.address}</p>
+                </div>
             </header>
             {!BOOKING_OPEN && preview && <p className="card border-brass/50 bg-brass/10 p-3 text-sm text-brass">Клиенты эту страницу пока не видят: запись идёт через Dikidi.</p>}
-            {!open ? <div className="card p-6 text-center text-muted">Онлайн-запись скоро откроется.</div>
+            {!open ? <div className="card flex flex-col items-center gap-3 p-6 text-center text-muted">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/beha/scene-wood.webp" alt="" className="w-full max-w-xs rounded-xl" />
+                        Главный лесничий колет дрова. Онлайн-запись скоро откроется.
+                    </div>
                 : services.length === 0 ? <div className="card p-6 text-center text-muted">Услуги ещё не добавлены.</div>
                 : <BookingFlow staff={staff.filter((m) => services.some((s) => s.staff_id === m.id))} services={services.map(({ id, staff_id, category, name, duration_min, price }) => ({ id, staff_id, category, name, duration_min, price }))} days={days} />}
+            <BehaNote />
         </main>
     )
 }

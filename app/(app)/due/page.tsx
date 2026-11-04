@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Beha } from '@/components/beha'
 import { getDue } from '@/lib/data'
 import { dateRu, telHref } from '@/lib/format'
 
@@ -8,7 +9,7 @@ export default async function DuePage() {
     return (
         <>
             <h1 className="text-2xl font-bold">Пора обновить</h1>
-            {due.length === 0 && <div className="card p-6 text-center text-muted">Пока никого.</div>}
+            {due.length === 0 && <div className="card flex flex-col items-center gap-2 p-6 text-center text-muted"><Beha pose="coffee" size={160} />Пока никого.</div>}
             <ul className="flex flex-col gap-2">
                 {due.map((c) => (
                     <li key={c.id} className="card flex items-center justify-between gap-3 p-4">

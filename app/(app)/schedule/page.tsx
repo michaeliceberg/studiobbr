@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Plus, Settings } from 'lucide-react'
 import { cancelAppointment } from '@/app/schedule-actions'
+import { Beha } from '@/components/beha'
 import { ConfirmButton } from '@/components/confirm-button'
 import { addDays, getAppointments, HORIZON_DAYS, mskToday } from '@/lib/booking'
 import { dateRu, telHref } from '@/lib/format'
@@ -22,7 +23,7 @@ export default async function SchedulePage() {
                 </div>
             </div>
             <Link href="/book" className="text-sm text-brass">Страница записи для клиентов: studiobbr.ru/book</Link>
-            {days.length === 0 && <div className="card p-6 text-center text-muted">Записей пока нет.</div>}
+            {days.length === 0 && <div className="card flex flex-col items-center gap-2 p-6 text-center text-muted"><Beha pose="armchair" size={180} />Записей пока нет. Можно и кофе выпить.</div>}
             {days.map((d) => (
                 <section key={d} className="flex flex-col gap-2">
                     <h2 className="font-bold text-brass">{d === today ? 'Сегодня' : d === addDays(today, 1) ? 'Завтра' : dateRu(`${d}T12:00:00+03:00`)}</h2>

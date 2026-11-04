@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cancelByToken } from '@/app/book/actions'
+import { Beha, BehaNote } from '@/components/beha'
 import { ConfirmButton } from '@/components/confirm-button'
 import { getAppointmentByToken, mskToday } from '@/lib/booking'
 import { dateRu, telHref } from '@/lib/format'
@@ -19,6 +20,7 @@ export default async function AppointmentPage({ params }: { params: { token: str
     return (
         <main className="mx-auto flex min-h-screen max-w-xl flex-col gap-4 p-4 pb-12">
             <h1 className="text-3xl font-black tracking-wide text-brass">BBR Studio</h1>
+            <Beha pose={cancelled ? 'oops' : 'approve'} size={180} className="mx-auto" />
             <section className={`card flex flex-col gap-2 p-5 ${cancelled ? '' : 'border-mint'}`}>
                 <p className={`font-bold ${cancelled ? 'text-danger' : 'text-mint'}`}>{cancelled ? 'Запись отменена' : 'Вы записаны'}</p>
                 <p className="text-2xl font-black">{dateRu(`${a.day}T12:00:00+03:00`)}, {a.time}</p>
@@ -35,6 +37,7 @@ export default async function AppointmentPage({ params }: { params: { token: str
             )}
             {OPERATOR.phone && <a href={telHref(OPERATOR.phone)} className="btn-ghost w-full">Позвонить в студию</a>}
             {cancelled && <Link href="/book" className="btn-primary w-full">Записаться заново</Link>}
+            <BehaNote />
         </main>
     )
 }

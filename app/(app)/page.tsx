@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
+import { Beha } from '@/components/beha'
 import { LiveSearch } from '@/components/live-search'
 import { getDue, searchClients } from '@/lib/data'
 import { dateRu } from '@/lib/format'
@@ -17,7 +18,8 @@ export default async function Home({ searchParams }: { searchParams: { q?: strin
                 </Link>
             )}
             {clients.length === 0 ? (
-                <div className="card p-6 text-center text-muted">
+                <div className="card flex flex-col items-center p-6 text-center text-muted">
+                    <Beha pose={q ? 'think' : 'hello'} size={160} className="mb-3" />
                     {q ? 'Никого не нашлось.' : 'Пока ни одного клиента.'}
                     <div className="mt-4"><Link href="/clients/new" className="btn-primary">Добавить клиента</Link></div>
                 </div>

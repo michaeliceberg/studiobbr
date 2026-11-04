@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { Beha } from '@/components/beha'
 import { isAuthed } from '@/lib/auth'
 
 // Обычная форма (работает даже без JS): POST /api/login.
@@ -6,6 +7,7 @@ export default function LoginPage({ searchParams }: { searchParams: { error?: st
     if (isAuthed()) redirect('/')
     return (
         <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
+            <Beha pose="door" size={200} className="mx-auto" />
             <h1 className="text-center text-3xl font-black tracking-wide text-brass">BBR Studio</h1>
             <form action="/api/login" method="post" className="card flex flex-col gap-3 p-5">
                 <label className="label" htmlFor="password">Пароль мастера</label>
