@@ -121,3 +121,14 @@ ALTER TABLE appointments ADD COLUMN IF NOT EXISTS tg_chat_id bigint;
 ALTER TABLE ai_images ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'master';
 ALTER TABLE ai_images ADD COLUMN IF NOT EXISTS ip text NOT NULL DEFAULT '';
 CREATE INDEX IF NOT EXISTS ai_images_kind_idx ON ai_images (kind, created_at);
+
+-- Напоминания клиентам ботом (как в Garaggio): один раз на запись и вид напоминания, ответ клиента «Приеду / Перенести».
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS client_confirm text;
+CREATE TABLE IF NOT EXISTS reminder_log (
+    id         serial PRIMARY KEY,
+    ref        text NOT NULL UNIQUE,
+    appt_id    int,
+    chat_id    bigint,
+    text       text NOT NULL DEFAULT '',
+    sent_at    timestamptz NOT NULL DEFAULT now()
+);

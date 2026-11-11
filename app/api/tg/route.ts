@@ -1,5 +1,7 @@
 import { addMaster, bookingLink, chatAppointments, appointmentLink, fmtWhen, getMasters, masterPayload, notifyMasters, removeMaster, tgSend } from '@/lib/tg'
 import { OPERATOR } from '@/lib/legal'
+import { sql } from '@/lib/db'
+import { tgApi } from '@/lib/tg'
 
 // Обновления Telegram приносит опросчик (scripts/tg-poller.mjs) с секретным заголовком.
 type Msg = { chat: { id: number; type: string }; from?: { first_name?: string; last_name?: string; username?: string }; text?: string }
@@ -16,7 +18,8 @@ const sendBooking = (chatId: string) => tgSend(chatId, 'Выберите усл�
 export async function POST(req: Request) {
     if (!process.env.TG_WEBHOOK_SECRET || req.headers.get('x-telegram-bot-api-secret-token') !== process.env.TG_WEBHOOK_SECRET)
         return new Response('forbidden', { status: 403 })
-    const u = await req.json().catch(() => null) as { message?: Msg } | null
+    const u = await req.json().catch(() => null) as { message?: Msg; callback_query?: Cb } | null
+    if (u?.callback_query) { try { await handleCallback(u.callback_query) } catch (e) { console.error('tg cb', e) } return Response.json({ ok: true }) }
     const m = u?.message
     if (!m?.chat || m.chat.type !== 'private') return Response.json({ ok: true })
     try { await handle(m) } catch (e) { console.error('tg', e) }
@@ -66,5 +69,29 @@ async function handle(m: Msg) {
     if (!isMaster && text) {
         await notifyMasters(`💬 ${who(m)} пишет в бота:\n${text.slice(0, 1000)}`)
         await tgSend(chatId, 'Передал мастеру — он ответит, как освободится. А записаться можно сразу 👇', { reply_markup: menu })
+    }
+}
+
+// Кнопки под напоминанием: ap:yes:<id> — «Приеду», ap:move:<id> — «Перенести»
+type Cb = { id: string; data?: string; message?: { message_id: number; chat: { id: number } } }
+async function handleCallback(q: Cb) {
+    const answer = (t?: string) => tgApi('answerCallbackQuery', { callback_query_id: q.id, ...(t ? { text: t } : {}) }).catch(() => {})
+    const mm = /^ap:(yes|move):(\d+)$/.exec(q.data ?? '')
+    const chatId = q.message?.chat.id
+    if (!mm || !chatId) return answer()
+    const [a] = await sql<{ id: number; name: string; phone: string; service_name: string; starts_at: Date }[]>`
+        SELECT id, name, phone, service_name, starts_at FROM appointments WHERE id = ${Number(mm[2])} AND tg_chat_id = ${chatId} AND status = 'booked' AND starts_at > now()`
+    if (!a) return answer('Эта запись уже неактуальна')
+    await sql`UPDATE appointments SET client_confirm = ${mm[1]} WHERE id = ${a.id}`
+    await tgApi('editMessageReplyMarkup', { chat_id: chatId, message_id: q.message!.message_id, reply_markup: { inline_keyboard: [] } }).catch(() => {})
+    const when = fmtWhen(a.starts_at)
+    if (mm[1] === 'yes') {
+        await answer('Ждём вас!')
+        await tgSend(String(chatId), `Отлично, ждём вас ${when}! 🪓`)
+        await notifyMasters(`✅ Клиент подтвердил запись: ${a.name}, ${a.phone} — ${when}`)
+    } else {
+        await answer()
+        await tgSend(String(chatId), 'Без проблем! Напишите сюда удобное время — мастер подберёт, или отмените и запишитесь заново.', { reply_markup: { inline_keyboard: [[{ text: '📋 Моя запись', url: `${process.env.PUBLIC_URL || 'https://studiobbr.ru'}/a/${(await sql<{ token: string }[]>`SELECT token FROM appointments WHERE id = ${a.id}`)[0].token}` }]] } })
+        await notifyMasters(`🔁 Клиент просит перенести запись: ${a.name}, ${a.phone} — ${when}. Свяжитесь с ним.`)
     }
 }

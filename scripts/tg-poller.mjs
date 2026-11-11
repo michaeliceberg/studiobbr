@@ -30,7 +30,7 @@ console.log('bbr-studio tg poller started')
 let offset = readOffset()
 for (;;) {
     try {
-        const updates = await api('getUpdates', { offset, timeout: 25, allowed_updates: ['message'] })
+        const updates = await api('getUpdates', { offset, timeout: 25, allowed_updates: ['message', 'callback_query'] })
         for (const u of updates) {
             try {
                 const r = await fetch(LOCAL, {

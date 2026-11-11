@@ -12,7 +12,7 @@ export type Staff = { id: number; name: string; title: string }
 export type WorkHours = { weekday: number; is_open: boolean; open_min: number; close_min: number }
 export type Appointment = {
     id: number; token: string; client_id: number | null; service_name: string; name: string; phone: string; comment: string
-    day: string; time: string; end_time: string; status: string; source: string; staff_name: string
+    day: string; time: string; end_time: string; status: string; source: string; staff_name: string; client_confirm: string | null
 }
 
 export const mskToday = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' })
@@ -29,7 +29,7 @@ export const getWorkHours = () => sql<WorkHours[]>`SELECT * FROM work_hours ORDE
 export const getClosedDays = async () =>
     (await sql<{ day: string }[]>`SELECT day::text FROM closed_days WHERE day >= ${mskToday()}::date ORDER BY day`).map((d) => d.day)
 
-const APPT = sql`a.id, a.token, a.client_id, a.service_name, a.name, a.phone, a.comment, a.status, a.source,
+const APPT = sql`a.id, a.token, a.client_id, a.service_name, a.name, a.phone, a.comment, a.status, a.source, a.client_confirm,
     to_char(a.starts_at AT TIME ZONE 'Europe/Moscow', 'YYYY-MM-DD') AS day,
     to_char(a.starts_at AT TIME ZONE 'Europe/Moscow', 'HH24:MI') AS time,
     to_char(a.ends_at AT TIME ZONE 'Europe/Moscow', 'HH24:MI') AS end_time,

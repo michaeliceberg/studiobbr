@@ -31,7 +31,7 @@ export default async function SchedulePage() {
                         <article key={a.id} className="card flex flex-col gap-3 p-4">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <p className="text-lg font-black">{a.time}–{a.end_time}</p>
+                                    <p className="text-lg font-black">{a.time}–{a.end_time}{a.client_confirm === 'yes' && <span className="ml-2 text-sm font-bold text-mint">приедет</span>}{a.client_confirm === 'move' && <span className="ml-2 text-sm font-bold text-danger">просит перенести</span>}</p>
                                     {a.client_id ? <Link href={`/clients/${a.client_id}`} className="block truncate font-bold">{a.name}</Link> : <p className="truncate font-bold">{a.name}</p>}
                                     <p className="text-sm text-muted">{a.staff_name} · {a.service_name}{a.source === 'online' && ' · онлайн'}</p>
                                     {a.comment && <p className="mt-1 text-sm">{a.comment}</p>}
