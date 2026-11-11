@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { book, loadSlots } from '@/app/book/actions'
@@ -19,6 +20,16 @@ const WD = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
 const dayNum = (d: string) => Number(d.slice(8))
 const wd = (d: string) => WD[new Date(`${d}T12:00:00+03:00`).getUTCDay()]
 
+// Свёрнутый шаг: что выбрано, и кнопка «Изменить»
+function Done({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
+    return (
+        <button type="button" onClick={onEdit} className="card flex items-center justify-between gap-3 border-mint/60 p-3 text-left">
+            <span className="min-w-0"><span className="block text-xs text-muted">{label}</span><span className="block truncate font-bold">{value}</span></span>
+            <span className="shrink-0 text-sm font-semibold text-brass">Изменить</span>
+        </button>
+    )
+}
+
 // Запись в один экран: мастер → услуга → день → время → контакты. Каждый следующий шаг появляется после выбора предыдущего.
 export function BookingFlow({ staff, services, days, tgKey }: { staff: Master[]; services: Svc[]; days: string[]; tgKey?: string }) {
     const router = useRouter()
@@ -33,8 +44,14 @@ export function BookingFlow({ staff, services, days, tgKey }: { staff: Master[];
     const [website, setWebsite] = useState('')
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [editing, setEditing] = useState<'master' | 'service' | 'when' | null>(null)
+    const [openCat, setOpenCat] = useState<string | null>(null)
 
     const mine = services.filter((s) => s.staff_id === master?.id)
+    const cats = Array.from(new Set(mine.map((s) => s.category)))
+    const masterOpen = !master || editing === 'master'
+    const serviceOpen = !!master && (!service || editing === 'service')
+    const whenOpen = !!service && (!time || editing === 'when')
 
     useEffect(() => {
         setTime(null); setSlots(null)
@@ -59,37 +76,50 @@ export function BookingFlow({ staff, services, days, tgKey }: { staff: Master[];
 
     return (
         <div className="flex flex-col gap-5">
+            {!masterOpen && master ? <Done label="Мастер" value={`${master.name}, ${master.title}`} onEdit={() => setEditing('master')} /> : (
             <section className="flex flex-col gap-2">
                 <h2 className="font-bold">Мастер</h2>
                 <div className="grid grid-cols-2 gap-2">
                     {staff.map((m) => (
-                        <button key={m.id} type="button" aria-pressed={master?.id === m.id} onClick={() => { setMaster(m); setService(null); setDay(null) }}
+                        <button key={m.id} type="button" aria-pressed={master?.id === m.id} onClick={() => { if (master?.id !== m.id) { setService(null); setDay(null); setTime(null) } setMaster(m); setEditing(null); setOpenCat(null) }}
                             className={`card p-4 text-left ${master?.id === m.id ? 'border-mint bg-mint/10' : ''}`}>
                             <span className="block text-lg font-black">{m.name}</span><span className="block text-sm text-muted">{m.title}</span>
                         </button>
                     ))}
                 </div>
             </section>
+            )}
 
-            {master && (
+            {master && !serviceOpen && service && <Done label="Услуга" value={`${service.name} · ${service.duration_min} мин${service.price > 0 ? ` · ${service.price} ₽` : ''}`} onEdit={() => setEditing('service')} />}
+            {master && serviceOpen && (
                 <section className="flex flex-col gap-2">
                     <h2 className="font-bold">Услуга</h2>
-                    {Array.from(new Set(mine.map((s) => s.category))).map((cat) => (
-                        <div key={cat} className="flex flex-col gap-2">
-                            {cat && <h3 className="mt-1 text-sm font-semibold text-muted">{cat}</h3>}
-                            {mine.filter((s) => s.category === cat).map((s) => (
-                                <button key={s.id} type="button" aria-pressed={service?.id === s.id} onClick={() => setService(s)}
-                                    className={`card flex items-center justify-between gap-3 p-4 text-left ${service?.id === s.id ? 'border-mint bg-mint/10' : ''}`}>
-                                    <span className="min-w-0"><span className="block font-bold">{s.name}</span><span className="block text-sm text-muted">{s.duration_min} мин</span></span>
-                                    <span className="shrink-0 font-bold text-brass">{s.price > 0 ? `${s.price} ₽` : ''}</span>
-                                </button>
-                            ))}
-                        </div>
-                    ))}
+                    {cats.map((cat) => {
+                        const list = mine.filter((s) => s.category === cat)
+                        const open = cats.length === 1 || openCat === cat
+                        return (
+                            <div key={cat} className="flex flex-col gap-2">
+                                {cats.length > 1 && (
+                                    <button type="button" aria-expanded={open} onClick={() => setOpenCat(open ? null : cat)} className="card flex items-center justify-between gap-3 p-4 text-left">
+                                        <span className="font-bold">{cat || 'Другое'}</span>
+                                        <span className="flex shrink-0 items-center gap-2 text-sm text-muted">{list.length}<ChevronDown size={18} className={open ? 'rotate-180' : ''} /></span>
+                                    </button>
+                                )}
+                                {open && list.map((s) => (
+                                    <button key={s.id} type="button" aria-pressed={service?.id === s.id} onClick={() => { setService(s); setEditing(null) }}
+                                        className={`card flex items-center justify-between gap-3 p-4 text-left ${service?.id === s.id ? 'border-mint bg-mint/10' : ''}`}>
+                                        <span className="min-w-0"><span className="block font-bold">{s.name}</span><span className="block text-sm text-muted">{s.duration_min} мин</span></span>
+                                        <span className="shrink-0 font-bold text-brass">{s.price > 0 ? `${s.price} ₽` : ''}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )
+                    })}
                 </section>
             )}
 
-            {service && (
+            {service && !serviceOpen && !whenOpen && day && time && <Done label="День и время" value={`${wd(day)}, ${dayNum(day)}.${day.slice(5, 7)} в ${time}`} onEdit={() => setEditing('when')} />}
+            {service && !serviceOpen && whenOpen && (
                 <section className="flex flex-col gap-2">
                     <h2 className="font-bold">День</h2>
                     <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
@@ -103,18 +133,18 @@ export function BookingFlow({ staff, services, days, tgKey }: { staff: Master[];
                 </section>
             )}
 
-            {service && day && (
+            {service && !serviceOpen && whenOpen && day && (
                 <section className="flex flex-col gap-2">
                     <h2 className="font-bold">Время</h2>
                     {slots === null ? <p className="text-sm text-muted">Смотрю расписание…</p>
                         : slots.length === 0 ? <p className="card p-4 text-sm text-muted">На этот день свободного времени нет. Выберите другой.</p>
                         : <div className="grid grid-cols-4 gap-2">
-                            {slots.map((t) => <button key={t} type="button" aria-pressed={time === t} onClick={() => setTime(t)} className={`chip !px-0 ${time === t ? 'chip-on' : ''}`}>{t}</button>)}
+                            {slots.map((t) => <button key={t} type="button" aria-pressed={time === t} onClick={() => { setTime(t); setEditing(null) }} className={`chip !px-0 ${time === t ? 'chip-on' : ''}`}>{t}</button>)}
                         </div>}
                 </section>
             )}
 
-            {service && day && time && (
+            {service && !serviceOpen && day && time && (
                 <form onSubmit={submit} className="card flex flex-col gap-4 p-4">
                     <div>
                         <label className="label" htmlFor="book-name">Как вас зовут</label>
