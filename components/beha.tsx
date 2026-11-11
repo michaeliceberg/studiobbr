@@ -7,4 +7,4 @@ export function Beha({ pose, size = 160, className = '' }: { pose: BehaPose; siz
 }
 
 // Пометка о персонаже: на страницах, которые видят клиенты.
-export const BehaNote = () => <p className="text-center text-xs text-muted">Персонаж Бэха создан с помощью ИИ</p>
+export const BehaNote = () => null

@@ -7,8 +7,8 @@ export const OPERATOR = {
     phone: '+7 926 686 69 68',
     site: 'studiobbr.ru',
 }
-// Клиенты сейчас записываются через Dikidi. Включить, когда своя запись проверена, есть напоминания и полное ФИО оператора.
-export const BOOKING_OPEN = false
+// Своя запись открыта для проверки (05.11.2026); полное ФИО и ИНН оператора допишем позже. Dikidi — запасной.
+export const BOOKING_OPEN = true
 export const POLICY_VERSION = '2026-11-04'
 
 // Пока своя запись закрыта (BOOKING_OPEN = false), клиентов с примерки ведём в Dikidi.
