@@ -21,11 +21,11 @@ function tooMany() {
     return false
 }
 
-export async function loadSlots(serviceId: number, day: string) {
-    return getSlots(serviceId, day)
+export async function loadSlots(serviceIds: number[], day: string) {
+    return getSlots(serviceIds, day)
 }
 
-export async function book(input: { serviceId: number; day: string; time: string; name: string; phone: string; comment: string; consent: boolean; website: string; k?: string }) {
+export async function book(input: { serviceIds: number[]; day: string; time: string; name: string; phone: string; comment: string; consent: boolean; website: string; k?: string }) {
     if (!BOOKING_OPEN && !isAuthed()) return { error: 'closed' }
     if (input.website) return { error: 'bad' } // скрытое поле: его заполняют только боты
     const name = input.name.trim().slice(0, 80)
@@ -34,8 +34,8 @@ export async function book(input: { serviceId: number; day: string; time: string
     if (!input.consent) return { error: 'consent' }
     if (tooMany()) return { error: 'limit' }
     if ((await activeBookingsByPhone(input.phone)) >= MAX_ACTIVE_PER_PHONE) return { error: 'phone-limit' }
-    if (!(await getSlots(input.serviceId, input.day)).includes(input.time)) return { error: 'taken' }
-    const r = await createAppointment({ serviceId: input.serviceId, day: input.day, time: input.time, name, phone: input.phone, comment: input.comment.trim().slice(0, 500), source: 'online', consent: true, tgChatId: chatFromBookingKey(input.k) })
+    if (!(await getSlots(input.serviceIds, input.day)).includes(input.time)) return { error: 'taken' }
+    const r = await createAppointment({ serviceId: input.serviceIds, day: input.day, time: input.time, name, phone: input.phone, comment: input.comment.trim().slice(0, 500), source: 'online', consent: true, tgChatId: chatFromBookingKey(input.k) })
     if ('token' in r && r.token) await announceBooking(r.token)
     revalidatePath('/schedule')
     return r

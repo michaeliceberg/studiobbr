@@ -46,9 +46,18 @@ export async function getAppointmentByToken(token: string) {
 }
 
 // Свободное время на день для услуги этой длительности.
-export async function getSlots(serviceId: number, day: string) {
+// Несколько услуг за раз (стрижка + борода + срочный выход): длительность складывается, мастер у всех один.
+const toIds = (v: number | number[]) => Array.from(new Set(Array.isArray(v) ? v : [v])).slice(0, 10)
+async function pickServices(ids: number[], activeOnly: boolean) {
+    const list = ids.length ? await sql<Service[]>`SELECT * FROM services WHERE id IN ${sql(ids)} ${activeOnly ? sql`AND active` : sql``}` : []
+    if (!list.length || list.length !== ids.length || new Set(list.map((x) => x.staff_id)).size !== 1) return null
+    const ordered = ids.map((id) => list.find((x) => x.id === id)!)
+    return { staff_id: ordered[0].staff_id, first: ordered[0], name: ordered.map((x) => x.name).join(' + '), duration_min: ordered.reduce((n, x) => n + x.duration_min, 0) }
+}
+
+export async function getSlots(serviceIds: number | number[], day: string) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < mskToday() || day > addDays(mskToday(), HORIZON_DAYS)) return []
-    const [s] = await sql<Service[]>`SELECT * FROM services WHERE id = ${serviceId} AND active`
+    const s = await pickServices(toIds(serviceIds), true)
     if (!s) return []
     const [[h], [closed], busy] = await Promise.all([
         sql<WorkHours[]>`SELECT * FROM work_hours WHERE weekday = ${weekdayOf(day)}`,
@@ -76,8 +85,8 @@ export const activeBookingsByPhone = async (phone: string) =>
     (await sql<{ n: number }[]>`SELECT count(*)::int AS n FROM appointments WHERE phone = ${formatPhone(phone)} AND status = 'booked' AND starts_at > now()`)[0].n
 
 // Единственное место, где создаётся запись. Занятое время отсекает сама база: см. EXCLUDE в схеме.
-export async function createAppointment(a: { serviceId: number; day: string; time: string; name: string; phone: string; comment: string; source: 'online' | 'master'; consent: boolean; tgChatId?: string | null }) {
-    const [s] = await sql<Service[]>`SELECT * FROM services WHERE id = ${a.serviceId}`
+export async function createAppointment(a: { serviceId: number | number[]; day: string; time: string; name: string; phone: string; comment: string; source: 'online' | 'master'; consent: boolean; tgChatId?: string | null }) {
+    const s = await pickServices(toIds(a.serviceId), false)
     if (!s) return { error: 'bad' as const }
     const phone = formatPhone(a.phone)
     const start = at(a.day, timeToMin(a.time))
@@ -86,7 +95,7 @@ export async function createAppointment(a: { serviceId: number; day: string; tim
     try {
         const [row] = await sql<{ token: string }[]>`
             INSERT INTO appointments (client_id, staff_id, service_id, service_name, name, phone, comment, starts_at, ends_at, source, consent_at, tg_chat_id)
-            VALUES (${client_id}, ${s.staff_id}, ${s.id}, ${s.name}, ${a.name}, ${phone}, ${a.comment}, ${start}, ${end}, ${a.source}, ${a.consent ? new Date() : null}, ${a.tgChatId ?? null})
+            VALUES (${client_id}, ${s.staff_id}, ${s.first.id}, ${s.name}, ${a.name}, ${phone}, ${a.comment}, ${start}, ${end}, ${a.source}, ${a.consent ? new Date() : null}, ${a.tgChatId ?? null})
             RETURNING token`
         return { token: row.token }
     } catch (e) {
